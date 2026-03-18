@@ -1,7 +1,7 @@
 # CMO Dashboard — Strategy Memory & Foundation
 
 **Date :** 2026-03-18
-**Statut :** En attente de review
+**Statut :** Approuvé
 
 ---
 
@@ -40,35 +40,37 @@ Le `StrategyPlanner` existant devient le **Bloc 3**, inchangé fonctionnellement
 
 ### Source de données
 
-Lecture de `CLAUDE.md` **côté serveur** dans `page.tsx`. Parsing manuel des sections markdown (pas de bibliothèque externe). Les données sont passées en props au composant client.
+Lecture de `CLAUDE.md` **côté serveur** dans `page.tsx`. Parsing manuel des sections markdown (pas de bibliothèque externe). Les données sont passées en props au composant server `StrategyFoundation`.
 
 ### Sections affichées
 
 | Section CLAUDE.md | Titre affiché | Format |
 |---|---|---|
-| Identité + Mission éditoriale | Identité & Mission | Texte + badge poste |
-| Convictions fortes (§2) | Convictions | Liste numérotée |
-| Piliers thématiques (§4) | Piliers | Tableau avec fréquence % |
-| Audience cible (§5) | Audience | 3 cards (primaire / secondaire / tertiaire) |
-| Marqueurs de voix (§2) | Voix & Style | Liste |
+| `## 1. IDENTITÉ` (jusqu'à `### Mission éditoriale` inclus) | Identité & Mission | Texte + badge poste |
+| `### Convictions fortes` (dans §2) | Convictions | Liste numérotée |
+| `## 4. PILIERS THÉMATIQUES` (table markdown) | Piliers | Tableau avec fréquence % |
+| `## 5. AUDIENCE CIBLE` (3 sous-sections) | Audience | 3 cards |
+| `### Marqueurs de voix à utiliser` (dans §2) | Voix & Style | Liste bullet |
+
+### Parsing côté serveur — règles exactes
+
+La structure réelle de `CLAUDE.md` utilise des H2 (`##`) pour les sections principales et des H3 (`###`) pour les sous-sections. Le parsing ne peut pas être un simple split sur H3 — il doit cibler les bons niveaux par section.
+
+Fonction `parseCLAUDEMd(content: string): CLAUDEMdSections` dans `page.tsx` :
+
+**`identite`** — Extraire le contenu entre `## 1. IDENTITÉ` et le premier H3 `### Parcours` : prend `### Mission éditoriale` et `### Ce qui rend Jonathan unique`. Concaténer ces deux sous-sections en string brut.
+
+**`convictions`** — Chercher `### Convictions fortes` (dans §2), extraire le bloc jusqu'au prochain H3. Parser chaque ligne commençant par un chiffre suivi d'un `.` → `string[]`. Supprimer le marquage gras markdown (`**...**`) avec `.replace(/\*\*/g, '')`.
+
+**`piliers`** — Extraire la section `## 4. PILIERS THÉMATIQUES` jusqu'au prochain `##`. Parser le tableau markdown : chaque ligne `| # | **Nom** | Angle | X% |` → `{ num, nom, angle, frequence }`. Nettoyer le gras avec `.replace(/\*\*/g, '')`.
+
+**`audience`** — Extraire `## 5. AUDIENCE CIBLE` jusqu'au prochain `##`. Parser les 3 sous-sections H3 (`### Cible primaire`, `### Cible secondaire`, `### Cible tertiaire`). Pour chaque, extraire les lignes `**Douleur principale :**` et `**Ce qu'ils cherchent :**` → `{ type: 'primaire'|'secondaire'|'tertiaire', douleur, cherche }`.
+
+**`voix`** — Extraire uniquement `### Marqueurs de voix à utiliser` (dans §2), jusqu'au prochain H3. Retourner string brut. **Ne pas inclure** `### Convictions fortes` ni `### Tonalité` (traités séparément ou ignorés).
 
 ### Composant : `StrategyFoundation`
 
-Composant **server** (pas de 'use client') — reçoit les sections parsées en props, les affiche. Aucun état, aucun effet.
-
-### Parsing côté serveur
-
-Dans `page.tsx`, fonction `parseCLAUDEMd(content: string)` qui extrait les sections clés par leur titre H3. Retourne un objet typé `CLAUDEMdSections`.
-
-```ts
-type CLAUDEMdSections = {
-  identite: string       // contenu brut de la section identité
-  convictions: string[]  // les 5 convictions extraites
-  piliers: Array<{ num: number; nom: string; angle: string; frequence: string }>
-  audience: Array<{ type: string; douleur: string; cherche: string }>
-  voix: string           // contenu brut de la section voix
-}
-```
+Composant **server** (pas de `'use client'`) — reçoit `CLAUDEMdSections` en props, les affiche. Aucun état, aucun effet.
 
 ---
 
@@ -83,90 +85,179 @@ generatedAt: 2026-03-18
 
 ## Vision IA
 
-[Contenu généré par Claude — JSON rendu en markdown]
+```json
+{
+  "situationActuelle": "...",
+  "directionRecommandee": "...",
+  "priorites": ["...", "..."],
+  "themesAEviter": ["...", "..."],
+  "coherence": "..."
+}
+```
 
 ## Note Jonathan
 
 [Texte libre de Jonathan — vide par défaut]
 ```
 
+Le JSON est stocké **dans un bloc de code fencé** (` ```json ... ``` `) dans la section `## Vision IA`. Cela le rend machine-parseable par extraction de section + JSON.parse, tout en restant lisible à l'œil.
+
 ### Lib : `dashboard/lib/vision.ts`
 
 ```ts
-readVision(): Promise<{ visionIA: string; noteJonathan: string; generatedAt: string | null }>
+readVision(): Promise<VisionData>
+// Lit vision.md. Si le fichier n'existe pas → retourne { visionIA: null, noteJonathan: '', generatedAt: null }
+// Extrait la section ## Vision IA, parse le bloc ```json``` → VisionResponse | null
+// Extrait la section ## Note Jonathan → string brut
+// Retourne VisionData
+
+saveVision(vision: VisionResponse, generatedAt: string): Promise<void>
+// Écrit/réécrit vision.md complet (frontmatter + Vision IA JSON fencé + Note Jonathan préservée)
+// fs.mkdirSync(path.dirname(VISION_PATH), { recursive: true }) avant l'écriture
+
 saveNote(note: string): Promise<void>
-saveVision(visionIA: string): Promise<void>
+// Met à jour uniquement la section ## Note Jonathan, préserve Vision IA et frontmatter
+// fs.mkdirSync(...) avant l'écriture
 ```
 
-Fonctions pures de lecture/écriture du fichier `content/strategy/vision.md`.
+`VisionData` est défini dans `types.ts` (voir section Types). `readVision()` retourne `VisionResponse | null` pour `visionIA` — **pas `string`**.
+
+**Helpers purs exportés pour les tests :**
+```ts
+extractJsonFromVisionSection(content: string): VisionResponse | null
+extractNoteSection(content: string): string
+serializeVisionFile(vision: VisionResponse, note: string, generatedAt: string): string
+```
 
 ### Lib : `dashboard/lib/generate-vision.ts`
 
 ```ts
 generateVision(): Promise<VisionResponse>
-
-type VisionResponse = {
-  situationActuelle: string      // où on en est : campagnes réalisées, piliers couverts
-  directionRecommandee: string   // cap stratégique pour les prochains mois
-  priorites: string[]            // 3-5 thèmes à prioriser
-  themesAEviter: string[]        // sujets déjà saturés ou hors timing
-  coherence: string              // analyse de cohérence avec le positionnement CLAUDE.md
-}
 ```
 
 **Inputs pour Claude :**
-1. `CLAUDE.md` complet (positionnement, voix, piliers)
-2. `generation-log.md` **complet** (pas tronqué — pour la vision on veut toute l'histoire)
-3. Résumé du backlog idées (tous statuts, slugs + piliers + statut)
-4. Note Jonathan précédente (depuis `vision.md`)
+1. `CLAUDE.md` complet (lu via `fs.readFileSync`)
+2. Log complet via `readFullGenerationLog()` — **pas tronqué** (voir modification `generation-log.ts`)
+3. Résumé idées enrichi via `readIdeasSummaryFull()` — sujet + pilier + **statut** pour chaque idée, top 100 (voir modification `generate-strategy.ts`)
+4. Note Jonathan précédente via `readVision().noteJonathan` — string, peut être vide
 
 **Paramètres :** `claude-sonnet-4-6`, `max_tokens: 4096`, `CMO_SYSTEM_PROMPT`
 
-**Format de réponse :** JSON strict (même pattern que `generate-strategy.ts`).
+**Format réponse :** JSON strict. Le prompt demande ce JSON exact :
+```json
+{
+  "situationActuelle": "résumé de l'état actuel en 2-3 phrases",
+  "directionRecommandee": "cap stratégique pour les 3 prochains mois en 2-3 phrases",
+  "priorites": ["thème 1", "thème 2", "thème 3"],
+  "themesAEviter": ["sujet saturé 1", "sujet saturé 2"],
+  "coherence": "analyse de cohérence avec CLAUDE.md en 2 phrases"
+}
+```
 
 ### Routes API
 
 ```
-POST /api/strategy/generate-vision   → appelle generateVision(), saveVision(), retourne VisionResponse
-POST /api/strategy/save-note         → body: { note: string } → saveNote(), retourne { ok: true }
+POST /api/strategy/generate-vision
+  → appelle generateVision()
+  → appelle saveVision(result, today)
+  → retourne VisionData complet (visionIA, noteJonathan, generatedAt)
+
+POST /api/strategy/save-note
+  → body: { note: string }
+  → appelle saveNote(body.note)
+  → retourne { ok: true }
 ```
 
 ### Composant : `StrategyMemory` (client)
 
-**États :**
+**Props :**
+```ts
+type StrategyMemoryProps = {
+  initialData: VisionData  // passé depuis page.tsx (peut avoir visionIA: null si premier lancement)
+}
+```
+
+**État interne :**
 ```ts
 type MemoryState = {
-  visionIA: string
-  noteJonathan: string
-  generatedAt: string | null
+  vision: VisionData
   isGenerating: boolean
   isSavingNote: boolean
   error: string | null
-  noteChanged: boolean  // pour afficher le bouton "Sauvegarder"
+  noteChanged: boolean
+  noteValue: string
 }
 ```
 
 **Comportement :**
-- La vision existante (lue côté serveur dans `page.tsx`) est passée en `initialData` props
-- Bouton **"Régénérer la vision"** → appelle `POST /api/strategy/generate-vision` (~10-15 sec, spinner)
-- Zone read-only pour la vision IA (rendu markdown simple, pas de bibliothèque)
-- Textarea éditable pour la note Jonathan
-- Bouton **"Sauvegarder la note"** apparaît si note modifiée → appelle `POST /api/strategy/save-note`
+- Initialisation depuis `initialData` (aucun fetch au chargement)
+- Si `vision.visionIA === null` : afficher état vide avec message "Aucune vision générée — cliquez sur Générer"
+- Bouton **"Générer la vision"** (ou "Régénérer") → `POST /api/strategy/generate-vision` (~15 sec, spinner)
+- Affichage `VisionResponse` en champs structurés distincts (pas de rendu markdown)
+- Textarea pour `noteJonathan` — bouton **"Sauvegarder"** visible si note modifiée
+- Sur sauvegarde : `POST /api/strategy/save-note`
 
-**Rendu markdown simple :** La vision IA est une chaîne de caractères avec des sections (`situationActuelle`, `directionRecommandee`, etc.) formatées en texte lisible. Pas de rendu MDX — juste affichage des champs structurés dans des zones distinctes.
+**Affichage `VisionResponse`** (champs → zones nommées) :
+- `situationActuelle` → card "Situation actuelle"
+- `directionRecommandee` → card "Direction recommandée"
+- `priorites` → liste "Priorités"
+- `themesAEviter` → liste "À éviter"
+- `coherence` → card "Cohérence positionnement"
 
 ---
 
-## Intégration avec Bloc 1 (génération campagnes)
+## Modifications `generation-log.ts`
 
-`dashboard/lib/generate-strategy.ts` est modifié pour lire `vision.md` et injecter son contenu dans le prompt Claude :
+Ajouter l'export :
+```ts
+export async function readFullGenerationLog(): Promise<string>
+// Comme readGenerationLog() mais sans troncature — retourne toutes les entrées
+// Si vide → retourne 'Aucune génération précédente.'
+```
 
+---
+
+## Modifications `generate-strategy.ts`
+
+**1. Nouvelle fonction `readIdeasSummaryFull()`** (remplace `readIdeasSummary()` pour la vision) :
+```ts
+async function readIdeasSummaryFull(): Promise<string>
+// Appelle listIdeas(), top 100, inclut sujet + pilier + statut
+// Format : - "Titre" [Pilier] (statut)
+```
+
+**2. Injecter la vision dans le prompt Bloc 1** :
+Ajouter après le bloc "Idées existantes" dans le userPrompt de `generateStrategyPlan()` :
 ```
 ## Vision stratégique actuelle
-[contenu de vision.md — visionIA + noteJonathan]
+[lecture de readVision() → situationActuelle + directionRecommandee + noteJonathan si non vide]
+```
+Utiliser `readVision()` depuis `vision.ts`. Si `visionIA` est null, omettre le bloc.
+
+---
+
+## Intégration `page.tsx`
+
+```tsx
+export default async function StrategiePage() {
+  const claudeMd = fs.readFileSync(CLAUDE_MD_PATH, 'utf-8')
+  const sections = parseCLAUDEMd(claudeMd)
+  const visionData = await readVision()  // null-safe : retourne VisionData avec visionIA: null si absent
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <Sidebar />
+      <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
+        <StrategyFoundation sections={sections} />
+        <StrategyMemory initialData={visionData} />
+        <StrategyPlanner />
+      </div>
+    </div>
+  )
+}
 ```
 
-Cela remplace la lecture partielle du log (qui reste, mais la vision enrichit le contexte).
+Note : le layout change — le scroll se fait sur le conteneur droit (plus `overflow: hidden` sur le wrapper intérieur).
 
 ---
 
@@ -174,22 +265,26 @@ Cela remplace la lecture partielle du log (qui reste, mais la vision enrichit le
 
 | Action | Chemin | Responsabilité |
 |--------|--------|----------------|
-| Create | `dashboard/lib/vision.ts` | Lecture/écriture de `content/strategy/vision.md` |
-| Create | `dashboard/lib/vision.test.ts` | Tests unitaires (parsing, serialisation) |
+| Modify | `dashboard/lib/types.ts` | Ajouter `CLAUDEMdSections`, `VisionResponse`, `VisionData` |
+| Create | `dashboard/lib/vision.ts` | Lecture/écriture `vision.md` + helpers purs |
+| Create | `dashboard/lib/vision.test.ts` | Tests unitaires helpers purs |
 | Create | `dashboard/lib/generate-vision.ts` | Appel Claude → `VisionResponse` |
 | Create | `dashboard/app/api/strategy/generate-vision/route.ts` | POST — génère + sauvegarde vision |
-| Create | `dashboard/app/api/strategy/save-note/route.ts` | POST — sauvegarde note Jonathan |
-| Create | `content/strategy/vision.md` | Fichier de persistance initial |
-| Create | `dashboard/components/StrategyFoundation.tsx` | Affichage statique CLAUDE.md |
+| Create | `dashboard/app/api/strategy/save-note/route.ts` | POST — sauvegarde note |
+| Create | `content/strategy/vision.md` | Fichier de persistance initial (vide) |
+| Create | `dashboard/components/StrategyFoundation.tsx` | Affichage statique sections CLAUDE.md |
 | Create | `dashboard/components/StrategyMemory.tsx` | Vision IA + note Jonathan |
-| Modify | `dashboard/app/strategie/page.tsx` | Intégrer les 3 blocs, parser CLAUDE.md |
-| Modify | `dashboard/lib/generate-strategy.ts` | Lire vision.md pour enrichir Bloc 1 |
+| Modify | `dashboard/app/strategie/page.tsx` | Parser CLAUDE.md, lire vision, intégrer 3 blocs |
+| Modify | `dashboard/lib/generation-log.ts` | Ajouter `readFullGenerationLog()` |
+| Modify | `dashboard/lib/generate-strategy.ts` | Ajouter `readIdeasSummaryFull()`, injecter vision dans prompt |
 
 ---
 
 ## Types à ajouter dans `lib/types.ts`
 
 ```ts
+// ─── Strategy Memory ──────────────────────────────────────────────────────────
+
 export type CLAUDEMdSections = {
   identite: string
   convictions: string[]
@@ -218,8 +313,11 @@ export type VisionData = {
 ## Décisions de design
 
 1. **`StrategyFoundation` est server component** — pas de state, données statiques → rendu immédiat sans hydratation.
-2. **Vision complète vs tronquée** — pour la vision, on lit le generation-log complet (pas seulement 5 entrées). La vision est une synthèse stratégique, pas un prompt de génération. Les tokens sont moins contraints (input uniquement, pas besoin de budget output large).
-3. **`VisionResponse` est stocké comme JSON dans `vision.md`** — entre les marqueurs de section, pas en frontmatter (trop verbeux). Lecture par `vision.ts` via extraction de section markdown.
-4. **Pas de bibliothèque markdown** — le rendu de la vision IA se fait via affichage des champs structurés dans des divs nommées. YAGNI.
-5. **Note Jonathan est plaintext** — textarea libre, pas de markdown editor. Simplicité.
-6. **`page.tsx` lit les deux fichiers côté serveur** — `CLAUDE.md` pour `StrategyFoundation` et `vision.md` pour `StrategyMemory`. Données passées en props `initialData`. Pas de fetch client au chargement.
+2. **Vision complète vs tronquée** — pour la vision, on lit le generation-log complet. `readFullGenerationLog()` est une nouvelle export de `generation-log.ts`.
+3. **`VisionResponse` stocké comme JSON fencé** dans `vision.md` (bloc ` ```json ``` `). Machine-parseable et lisible. `vision.ts` extrait le bloc, fait `JSON.parse`, retourne `VisionResponse | null`.
+4. **`readVision()` retourne `VisionResponse | null`** (pas `string`) — cohérent avec `VisionData.visionIA`. Le composant `StrategyMemory` affiche les champs directement depuis l'objet.
+5. **Pas de bibliothèque markdown** — affichage des champs `VisionResponse` dans des zones nommées. YAGNI.
+6. **Note Jonathan est plaintext** — textarea libre.
+7. **`page.tsx` lit les deux fichiers côté serveur** — `vision.md` absent → `readVision()` retourne `{ visionIA: null, noteJonathan: '', generatedAt: null }` sans planter.
+8. **`mkdirSync` dans `vision.ts`** — avant chaque écriture, comme dans `generation-log.ts` ligne 63.
+9. **Parsing CLAUDE.md par section H2** — le parser cible les sections H2 (`##`) pour piliers et audience, et les sous-sections H3 (`###`) nommées précisément pour convictions et voix. Pas de split générique sur H3.
