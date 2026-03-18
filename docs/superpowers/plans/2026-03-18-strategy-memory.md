@@ -1145,7 +1145,7 @@ cd /Users/jonathanbraun/cmo-agent/dashboard && npx vitest run
 
 Expected: tous les tests PASS.
 
-- [ ] **Step 6: Vérifier le build Next.js**
+- [ ] **Step 5: Vérifier le build Next.js**
 
 ```bash
 cd /Users/jonathanbraun/cmo-agent/dashboard && npx next build 2>&1 | tail -20
@@ -1153,7 +1153,7 @@ cd /Users/jonathanbraun/cmo-agent/dashboard && npx next build 2>&1 | tail -20
 
 Expected: build réussi sans erreurs.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
 cd /Users/jonathanbraun/cmo-agent
