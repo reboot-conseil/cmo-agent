@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMO Dashboard — Maquette</title>
+<style>
+  /* ── Variables (reprises du dashboard-chef-projet) ─────────── */
+  :root {
+    --bg:            #F8FAFC;
+    --surface:       #FFFFFF;
+    --surface-raised:#F1F5F9;
+    --primary:       #2563EB;
+    --primary-hover: #1D4ED8;
+    --primary-light: #EFF6FF;
+    --accent:        #7c3aed;
+    --accent-light:  #F5F3FF;
+    --success:       #059669;
+    --success-light: #ECFDF5;
+    --warning:       #D97706;
+    --warning-light: #FFFBEB;
+    --fg:            #0F172A;
+    --muted:         #64748B;
+    --border:        #E2E8F0;
+    --border-muted:  #EEF2F7;
+    --radius-sm:     6px;
+    --radius-md:     10px;
+    --radius-lg:     14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--fg); font-size: 14px; line-height: 1.5; }
+
+  /* ── Layout ─────────────────────────────────────────────────── */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── Sidebar ────────────────────────────────────────────────── */
+  .sidebar {
+    width: 220px; min-width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 16px 0;
+  }
+  .sidebar-logo {
+    padding: 4px 20px 20px;
+    font-weight: 700; font-size: 15px; color: var(--primary);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sidebar-logo span { font-size: 20px; }
+  .nav-section { padding: 0 8px; margin-bottom: 20px; }
+  .nav-label { font-size: 10px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; padding: 0 12px 6px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 12px; border-radius: var(--radius-sm);
+    color: var(--muted); cursor: pointer; font-size: 13px;
+    transition: background 0.1s, color 0.1s;
+  }
+  .nav-item:hover { background: var(--surface-raised); color: var(--fg); }
+  .nav-item.active { background: var(--primary-light); color: var(--primary); font-weight: 500; }
+  .nav-icon { width: 16px; height: 16px; opacity: 0.7; }
+
+  /* ── Main area ──────────────────────────────────────────────── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+  .topbar {
+    height: 56px; min-height: 56px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 24px;
+    gap: 16px;
+  }
+  .topbar-title { font-weight: 600; font-size: 16px; color: var(--fg); }
+  .topbar-sub { color: var(--muted); font-size: 13px; margin-left: 4px; }
+  .topbar-spacer { flex: 1; }
+  .badge-pill {
+    display: inline-flex; align-items: center;
+    padding: 3px 10px; border-radius: 99px;
+    font-size: 11px; font-weight: 600;
+    background: var(--primary-light); color: var(--primary);
+  }
+
+  /* ── Content split (backlog | calendrier | détail) ────────── */
+  .content-area { flex: 1; display: flex; overflow: hidden; }
+
+  /* ── Backlog panel ──────────────────────────────────────────── */
+  .backlog-panel {
+    width: 340px; min-width: 340px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border-muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-title { font-weight: 600; font-size: 14px; }
+  .count-badge {
+    background: var(--surface-raised); color: var(--muted);
+    font-size: 11px; font-weight: 600;
+    padding: 1px 7px; border-radius: 99px;
+  }
+  .panel-tabs {
+    display: flex; padding: 8px 16px; gap: 4px;
+    border-bottom: 1px solid var(--border-muted);
+  }
+  .tab-btn {
+    padding: 5px 12px; border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    border: none; background: transparent; color: var(--muted);
+    transition: background 0.1s, color 0.1s;
+  }
+  .tab-btn.active { background: var(--primary-light); color: var(--primary); }
+  .tab-btn:hover:not(.active) { background: var(--surface-raised); color: var(--fg); }
+
+  .backlog-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+  /* ── Idea card ──────────────────────────────────────────────── */
+  .idea-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+    position: relative;
+  }
+  .idea-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 12px rgba(37,99,235,0.10);
+    transform: translateY(-1px);
+  }
+  .idea-card.selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  }
+  .idea-card-top { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+  .pilier-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    margin-top: 5px; flex-shrink: 0;
+  }
+  .idea-subject { font-weight: 600; font-size: 13px; color: var(--fg); line-height: 1.4; flex: 1; }
+  .idea-preview { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .idea-footer { display: flex; align-items: center; gap: 6px; }
+  .format-badge {
+    padding: 2px 8px; border-radius: 99px;
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .drag-hint {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 11px; color: var(--muted);
+    margin-left: auto;
+  }
+  .drag-icon { opacity: 0.4; font-size: 14px; }
+  .img-indicator {
+    display: flex; align-items: center; gap: 3px;
+    font-size: 10px; color: var(--muted);
+    padding: 2px 6px; background: var(--surface-raised);
+    border-radius: 4px;
+  }
+
+  /* Pilier colors */
+  .p-ia     { background-color: #2563EB; }
+  .p-strat  { background-color: #7c3aed; }
+  .p-biz    { background-color: #059669; }
+  .p-neuro  { background-color: #D97706; }
+  .p-inno   { background-color: #0891b2; }
+  .p-coul   { background-color: #db2777; }
+
+  /* Format badge colors */
+  .f-post     { background: #EFF6FF; color: #2563EB; }
+  .f-carousel { background: #F5F3FF; color: #7c3aed; }
+  .f-article  { background: #ECFDF5; color: #059669; }
+  .f-video    { background: #FEF2F2; color: #DC2626; }
+
+  /* ── Calendar panel ─────────────────────────────────────────── */
+  .calendar-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .cal-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border-muted);
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface);
+  }
+  .cal-nav-btn {
+    width: 28px; height: 28px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--muted); font-size: 14px;
+    transition: background 0.1s;
+  }
+  .cal-nav-btn:hover { background: var(--surface-raised); }
+  .cal-month { font-weight: 600; font-size: 14px; min-width: 120px; }
+  .cal-kpis { display: flex; gap: 12px; margin-left: auto; }
+  .cal-kpi { text-align: right; }
+  .cal-kpi-val { font-weight: 700; font-size: 18px; color: var(--fg); line-height: 1; }
+  .cal-kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .cal-grid-wrapper { flex: 1; overflow: auto; padding: 16px 20px; }
+
+  .week-row { display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start; }
+  .week-label {
+    width: 64px; min-width: 64px;
+    padding-top: 10px;
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .week-days { display: flex; gap: 8px; flex: 1; }
+
+  .day-col { flex: 1; min-width: 0; }
+  .day-header {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-align: center; padding: 4px 0 6px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+
+  .day-slot {
+    min-height: 80px;
+    background: var(--surface);
+    border: 1.5px dashed var(--border);
+    border-radius: var(--radius-md);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: var(--muted); font-size: 11px;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative; overflow: hidden; padding: 6px;
+    cursor: pointer;
+  }
+  .day-slot.has-content {
+    border-style: solid; border-color: var(--border);
+    align-items: flex-start; justify-content: flex-start;
+    cursor: pointer;
+  }
+  .day-slot.has-content:hover { border-color: var(--primary); }
+  .day-slot.drop-target { border-color: var(--primary); background: var(--primary-light); }
+  .day-slot-empty-icon { font-size: 18px; opacity: 0.3; margin-bottom: 2px; }
+  .day-slot-empty-text { font-size: 10px; opacity: 0.6; }
+
+  .slot-content { width: 100%; }
+  .slot-pilier-bar {
+    height: 3px; width: 100%;
+    border-radius: 2px; margin-bottom: 6px;
+  }
+  .slot-subject { font-size: 12px; font-weight: 600; color: var(--fg); line-height: 1.35; margin-bottom: 4px; }
+  .slot-meta { display: flex; align-items: center; gap: 4px; }
+  .slot-statut {
+    font-size: 10px; padding: 1px 6px;
+    border-radius: 4px; font-weight: 500;
+  }
+  .s-todo    { background: #F1F5F9; color: #64748B; }
+  .s-draft   { background: var(--primary-light); color: var(--primary); }
+  .s-review  { background: var(--warning-light); color: var(--warning); }
+  .s-valid   { background: var(--success-light); color: var(--success); }
+  .s-publie  { background: var(--accent-light); color: var(--accent); }
+
+  /* ── Détail panel ───────────────────────────────────────────── */
+  .detail-panel {
+    width: 380px; min-width: 380px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .detail-header {
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border-muted);
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .detail-pilier-pill {
+    padding: 3px 10px; border-radius: 99px;
+    font-size: 11px; font-weight: 600;
+    white-space: nowrap;
+  }
+  .detail-close {
+    margin-left: auto; padding: 4px; cursor: pointer;
+    color: var(--muted); border-radius: 4px;
+    transition: background 0.1s;
+    font-size: 16px; line-height: 1;
+    border: none; background: transparent;
+  }
+  .detail-close:hover { background: var(--surface-raised); }
+  .detail-body { flex: 1; overflow-y: auto; padding: 16px; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section-label {
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .detail-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border-muted); }
+  .detail-subject { font-weight: 700; font-size: 16px; color: var(--fg); line-height: 1.4; margin-bottom: 4px; }
+  .detail-hook { font-size: 13px; color: var(--primary); font-style: italic; margin-top: 4px; }
+
+  .text-block {
+    background: var(--surface-raised);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    font-size: 13px; color: var(--fg); line-height: 1.65;
+  }
+  .text-block p { margin-bottom: 10px; }
+  .text-block p:last-child { margin-bottom: 0; }
+
+  .image-block {
+    background: var(--surface-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+  }
+  .image-block-type {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .image-block-prompt { font-size: 12px; color: var(--fg); line-height: 1.6; font-style: italic; }
+
+  .detail-actions { padding: 14px 16px; border-top: 1px solid var(--border-muted); display: flex; gap: 8px; }
+  .btn {
+    flex: 1; padding: 8px 14px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; cursor: pointer;
+    border: none; transition: background 0.1s, color 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-secondary { background: var(--surface-raised); color: var(--fg); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+
+  /* ── Scrollbar style ────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  /* ── Section header in backlog ──────────────────────────────── */
+  .section-divider {
+    font-size: 10px; font-weight: 700; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    padding: 4px 2px 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-muted); }
+
+  /* Annotation callout */
+  .annotation {
+    position: absolute;
+    background: #FEF9C3; border: 1.5px solid #FDE047;
+    border-radius: 8px; padding: 8px 12px;
+    font-size: 11px; color: #713F12; line-height: 1.4;
+    max-width: 200px; z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .annotation::before { content: '💡 '; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo"><span>✦</span> CMO Agent</div>
+    <div class="nav-section">
+      <div class="nav-label">Contenu</div>
+      <div class="nav-item active">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Backlog → Calendrier
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Drafts
+      </div>
+      <div class="nav-item">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Performances
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Intelligence</div>
+      <div class="nav-item">
+        <svg class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Veille
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Main ────────────────────────────────────────────────── -->
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title">Planification</span>
+      <span class="topbar-sub">— Jonathan BRAUN</span>
+      <div class="topbar-spacer"></div>
+      <div class="badge-pill">Mars 2026</div>
+    </div>
+
+    <div class="content-area">
+
+      <!-- ── Backlog panel ──────────────────────────────────── -->
+      <div class="backlog-panel">
+        <div class="panel-header">
+          <span class="panel-title">Idées</span>
+          <span class="count-badge">18</span>
+        </div>
+        <div class="panel-tabs">
+          <button class="tab-btn active">Tous</button>
+          <button class="tab-btn">Post</button>
+          <button class="tab-btn">Carrousel</button>
+          <button class="tab-btn">Article</button>
+          <button class="tab-btn">Vidéo</button>
+        </div>
+
+        <div class="backlog-list">
+
+          <div class="section-divider">Posts terrain</div>
+
+          <!-- Card 1 — selected/active -->
+          <div class="idea-card selected" onclick="selectCard(this)">
+            <div class="idea-card-top">
+              <div class="pilier-dot p-ia"></div>
+              <div class="idea-subject">Pourquoi 80% des projets IA échouent avant même le premier POC</div>
+            </div>
+            <div class="idea-preview">Ce n'est presque jamais un problème de technologie. C'est un problème de stratégie, de vision et d'accompagnement humain...</div>
+            <div class="idea-footer">
+              <span class="format-badge f-post">Post</span>
+              <span class="img-indicator">🖼 Photo</span>
+              <span class="drag-hint"><span class="drag-icon">⠿</span> Glisser</span>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="idea-card" onclick="selectCard(this)">
+            <div class="idea-card-top">
+              <div class="pilier-dot p-biz"></div>
+              <div class="idea-subject">Le POC de 5 jours : process de 10h/semaine automatisé avec N8N</div>
+            </div>
+            <div class="idea-preview">Comment on a livré en 3 jours ce qu'un intégrateur classique aurait facturé en 3 mois. Cas concret, chiffres réels...</div>
+            <div class="idea-footer">
+              <span class="format-badge f-post">Post</span>
+              <span class="img-indicator">🖼 Schéma</span>
+              <span class="drag-hint"><span class="drag-icon">⠿</span> Glisser</span>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="idea-card" onclick="selectCard(this)">
+            <div class="idea-card-top">
+              <div class="pilier-dot p-neuro"></div>
+              <div class="idea-subject">Le biais du statu quo : pourquoi notre cerveau résiste à l'IA</div>
+            </div>
+            <div class="idea-preview">Même quand on sait que c'est la bonne décision. Les neurosciences nous expliquent pourquoi, et comment contourner ce frein...</div>
+            <div class="idea-footer">
+              <span class="format-badge f-post">Post</span>
+              <span class="img-indicator">🖼 Illustration</span>
+              <span class="drag-hint"><span class="drag-icon">⠿</span> Glisser</span>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="idea-card" onclick="selectCard(this)">
+            <div class="idea-card-top">
+              <div class="pilier-dot p-coul"></div>
+              <div class="idea-subject">De président d'ONG (800k personnes, 50 pays) à l'IA</div>
+            </div>
+            <div class="idea-preview">Ce que le leadership international m'a appris sur la transformation. Les parallèles sont frappants — et souvent ignorés...</div>
+            <div class="idea-footer">
+              <span class="format-badge f-post">Post</span>
+              <span class="img-indicator">📷 Photo perso</span>
+              <span class="drag-hint"><span class="drag-icon">⠿</span> Glisser</span>
+            </div>
+          </div>
+
+          <div class="section-divider" style="margin-top:8px">Carrousels</div>
+
+          <!-- Card 5 — Carrousel -->
+          <div class="idea-card" onclick="selectCard(this)">
+            <div class="idea-card-top">
+              <div class="pilier-dot p-strat"></div>
+              <div class="idea-subject">Les 5 questions à poser AVANT de lancer un projet IA</div>
+            </div>
+            <div class="idea-preview">Slide 1 : La question que personne ne pose. Slide 2-5 : Les vraies questions stratégiques...</div>
+            <div class="idea-footer">
+              <span class="format-badge f-carousel">Carrousel</span>
+              <span class="img-indicator">🎨 Slides</span>
+              <span class="drag-hint"><span class="drag-icon">⠿</span> Glisser</span>
+            </div>
+          </div>
+
+          <!-- Card 6 — Carrousel -->
+          <div class="idea-card" onclick="selectCard(this)">
+            <div class="idea-card-top">
+              <div class="pilier-dot p-biz"></div>
+              <div class="idea-subject">Anatomie d'un POC réussi en 5 jours</div>
+            </div>
+            <div class="idea-preview">Slide par slide : Jour 1 — cadrage, Jour 2 — data, Jour 3 — build, Jour 4 — test, Jour 5 — présentation client...</div>
+            <div class="idea-footer">
+              <span class="format-badge f-carousel">Carrousel</span>
+              <span class="img-indicator">🎨 Timeline</span>
+              <span class="drag-hint"><span class="drag-icon">⠿</span> Glisser</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Calendar panel ─────────────────────────────────── -->
+      <div class="calendar-panel">
+        <div class="cal-header">
+          <button class="cal-nav-btn">‹</button>
+          <span class="cal-month">Mars 2026</span>
+          <button class="cal-nav-btn">›</button>
+          <div class="cal-kpis">
+            <div class="cal-kpi">
+              <div class="cal-kpi-val" style="color:var(--primary)">3</div>
+              <div class="cal-kpi-label">Planifiés</div>
+            </div>
+            <div class="cal-kpi">
+              <div class="cal-kpi-val" style="color:var(--warning)">2</div>
+              <div class="cal-kpi-label">À valider</div>
+            </div>
+            <div class="cal-kpi">
+              <div class="cal-kpi-val" style="color:var(--success)">1</div>
+              <div class="cal-kpi-label">Publiés</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cal-grid-wrapper">
+
+          <!-- Header days -->
+          <div class="week-row">
+            <div class="week-label"></div>
+            <div class="week-days">
+              <div class="day-col"><div class="day-header">Mar</div></div>
+              <div class="day-col"><div class="day-header">Mer</div></div>
+              <div class="day-col"><div class="day-header">Jeu</div></div>
+            </div>
+          </div>
+
+          <!-- Semaine 1 -->
+          <div class="week-row">
+            <div class="week-label">Sem. 1</div>
+            <div class="week-days">
+              <!-- Slot avec contenu -->
+              <div class="day-col">
+                <div class="day-slot has-content" onclick="openSlot()">
+                  <div class="slot-content">
+                    <div class="slot-pilier-bar p-ia" style="background:#2563EB"></div>
+                    <div class="slot-subject">Pourquoi 80% des projets IA échouent</div>
+                    <div class="slot-meta">
+                      <span class="slot-statut s-draft">✏️ Draft</span>
+                      <span class="format-badge f-post" style="margin-left:2px">Post</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Slot vide avec drop target -->
+              <div class="day-col">
+                <div class="day-slot drop-target">
+                  <div class="day-slot-empty-icon">＋</div>
+                  <div class="day-slot-empty-text">Déposer ici</div>
+                </div>
+              </div>
+              <!-- Slot publié -->
+              <div class="day-col">
+                <div class="day-slot has-content">
+                  <div class="slot-content">
+                    <div class="slot-pilier-bar" style="background:#db2777"></div>
+                    <div class="slot-subject">ONG → IA : ce que le leadership m'a appris</div>
+                    <div class="slot-meta">
+                      <span class="slot-statut s-publie">📤 Publié</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Semaine 2 -->
+          <div class="week-row">
+            <div class="week-label">Sem. 2</div>
+            <div class="week-days">
+              <div class="day-col">
+                <div class="day-slot has-content">
+                  <div class="slot-content">
+                    <div class="slot-pilier-bar" style="background:#7c3aed"></div>
+                    <div class="slot-subject">"On veut de l'IA" n'est pas une stratégie</div>
+                    <div class="slot-meta">
+                      <span class="slot-statut s-review">👀 À valider</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="day-col">
+                <div class="day-slot">
+                  <div class="day-slot-empty-icon">＋</div>
+                  <div class="day-slot-empty-text">Vide</div>
+                </div>
+              </div>
+              <div class="day-col">
+                <div class="day-slot has-content">
+                  <div class="slot-content">
+                    <div class="slot-pilier-bar" style="background:#059669"></div>
+                    <div class="slot-subject">Le POC de 5 jours avec N8N</div>
+                    <div class="slot-meta">
+                      <span class="slot-statut s-todo">⬜ À créer</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Semaine 3 -->
+          <div class="week-row">
+            <div class="week-label">Sem. 3</div>
+            <div class="week-days">
+              <div class="day-col">
+                <div class="day-slot">
+                  <div class="day-slot-empty-icon">＋</div>
+                  <div class="day-slot-empty-text">Vide</div>
+                </div>
+              </div>
+              <div class="day-col">
+                <div class="day-slot has-content">
+                  <div class="slot-content">
+                    <div class="slot-pilier-bar" style="background:#D97706"></div>
+                    <div class="slot-subject">Les 5 questions AVANT de lancer un projet IA</div>
+                    <div class="slot-meta">
+                      <span class="slot-statut s-todo">⬜ À créer</span>
+                      <span class="format-badge f-carousel" style="margin-left:2px">Carrousel</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="day-col">
+                <div class="day-slot">
+                  <div class="day-slot-empty-icon">＋</div>
+                  <div class="day-slot-empty-text">Vide</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Semaine 4 -->
+          <div class="week-row">
+            <div class="week-label">Sem. 4</div>
+            <div class="week-days">
+              <div class="day-col"><div class="day-slot"><div class="day-slot-empty-icon">＋</div><div class="day-slot-empty-text">Vide</div></div></div>
+              <div class="day-col"><div class="day-slot"><div class="day-slot-empty-icon">＋</div><div class="day-slot-empty-text">Vide</div></div></div>
+              <div class="day-col"><div class="day-slot"><div class="day-slot-empty-icon">＋</div><div class="day-slot-empty-text">Vide</div></div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Détail panel ─────────────────────────────────────── -->
+      <div class="detail-panel" id="detail-panel">
+        <div class="detail-header">
+          <div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px">
+              <span class="detail-pilier-pill" style="background:#EFF6FF;color:#2563EB">IA & Transformation</span>
+              <span class="format-badge f-post">Post</span>
+            </div>
+            <div class="detail-subject">Pourquoi 80% des projets IA échouent avant même le premier POC</div>
+            <div class="detail-hook">« Ce n'est presque jamais un problème de technologie. »</div>
+          </div>
+          <button class="detail-close" onclick="closeDetail()">✕</button>
+        </div>
+
+        <div class="detail-body">
+
+          <div class="detail-section">
+            <div class="detail-section-label">Texte du post</div>
+            <div class="text-block">
+              <p>J'ai accompagné des dizaines d'organisations sur leurs projets IA. Et la même erreur revient, encore et encore.</p>
+              <p>Elles commencent par choisir l'outil. Avant d'avoir défini le problème. Avant de savoir qui va l'utiliser. Avant d'avoir formé les équipes.</p>
+              <p>Résultat : des POC qui ne passent jamais en production. Des équipes qui n'adhèrent pas. Des budgets qui disparaissent sans résultats mesurables.</p>
+              <p><strong>La vraie raison ? L'absence de stratégie.</strong></p>
+              <p>Entre "on verra l'année prochaine" et "on lance un projet à 100k€", il y a le POC de 5 jours. Et ça change tout.</p>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <div class="detail-section-label">Visuel — Photo recommandée</div>
+            <div class="image-block">
+              <div class="image-block-type">📷 Photo authentique</div>
+              <div class="image-block-prompt">
+                Photo de Jonathan en train de faciliter un atelier ou une formation IA en entreprise. Tableau blanc ou post-its visible en arrière-plan. Ambiance salle de réunion pro mais détendue. Cadrage mi-corps, regard vers les participants (pas vers l'objectif). Lumière naturelle si possible.
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <div class="detail-section-label">Hashtags suggérés</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px">
+              <span style="background:var(--primary-light);color:var(--primary);padding:3px 10px;border-radius:99px;font-size:11px;font-weight:500">#IntelligenceArtificielle</span>
+              <span style="background:var(--primary-light);color:var(--primary);padding:3px 10px;border-radius:99px;font-size:11px;font-weight:500">#TransformationDigitale</span>
+              <span style="background:var(--primary-light);color:var(--primary);padding:3px 10px;border-radius:99px;font-size:11px;font-weight:500">#StratégieIA</span>
+              <span style="background:var(--primary-light);color:var(--primary);padding:3px 10px;border-radius:99px;font-size:11px;font-weight:500">#Leadership</span>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <div class="detail-section-label">Placer dans le calendrier</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+              <div style="background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:2px">SEM. 1</div>
+                <div style="font-size:12px;font-weight:600">Mardi 17 mars</div>
+              </div>
+              <div style="background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:2px">SEM. 2</div>
+                <div style="font-size:12px;font-weight:600">Mardi 24 mars</div>
+              </div>
+              <div style="background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:2px">SEM. 3</div>
+                <div style="font-size:12px;font-weight:600">Mercredi 25 mars</div>
+              </div>
+              <div style="background:var(--surface-raised);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;cursor:pointer;transition:border-color 0.15s" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                <div style="font-size:10px;color:var(--muted);margin-bottom:2px">SEM. 4</div>
+                <div style="font-size:12px;font-weight:600">Jeudi 26 mars</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="detail-actions">
+          <button class="btn btn-primary">📅 Planifier</button>
+          <button class="btn btn-secondary">✏️ Modifier le texte</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function selectCard(el) {
+  document.querySelectorAll('.idea-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function closeDetail() {
+  document.getElementById('detail-panel').style.display = 'none';
+}
+function openSlot() {
+  document.getElementById('detail-panel').style.display = 'flex';
+}
+</script>
+</body>
+</html>
