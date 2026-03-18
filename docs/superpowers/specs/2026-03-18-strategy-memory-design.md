@@ -58,7 +58,7 @@ La structure réelle de `CLAUDE.md` utilise des H2 (`##`) pour les sections prin
 
 Fonction `parseCLAUDEMd(content: string): CLAUDEMdSections` dans `page.tsx` :
 
-**`identite`** — Extraire le contenu entre `## 1. IDENTITÉ` et le premier H3 `### Parcours` : prend `### Mission éditoriale` et `### Ce qui rend Jonathan unique`. Concaténer ces deux sous-sections en string brut.
+**`identite`** — Extraire les sous-sections `### Mission éditoriale` et `### Ce qui rend Jonathan unique` (dans §1, elles viennent **après** `### Parcours`). Début : première occurrence de `### Mission éditoriale`. Fin : `## 2.` (prochain H2). Concaténer en string brut.
 
 **`convictions`** — Chercher `### Convictions fortes` (dans §2), extraire le bloc jusqu'au prochain H3. Parser chaque ligne commençant par un chiffre suivi d'un `.` → `string[]`. Supprimer le marquage gras markdown (`**...**`) avec `.replace(/\*\*/g, '')`.
 
