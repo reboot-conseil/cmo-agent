@@ -247,13 +247,20 @@ Quand Jonathan demande de générer du contenu :
 
 ### 7.2 Préparer une semaine
 
-Quand Jonathan demande "prépare ma semaine" :
+Le workflow "prépare ma semaine" est géré par le dashboard à `localhost:3001` (page **"Cette semaine"**, `/`).
 
-1. **Consulter** `content/calendar.md` pour le plan du mois
-2. **Vérifier** `content/published/` pour ne pas répéter les sujets récents
-3. **Piocher** dans `content/ideas-backlog.md` les idées en attente
-4. **Proposer 3-5 posts** avec : jour suggéré, pilier, hook, format
-5. **Après validation**, générer les drafts complets
+**Flux dans le dashboard :**
+1. **Note vocale** — Jonathan dicte sur son téléphone, colle le texte dans le champ gauche
+2. **Veille IA** — clic "Rechercher" → 5 sujets tendance générés automatiquement
+3. **Générer le plan** — Claude synthétise les 3 flux (campagnes actives + note + veille) → 3-4 posts proposés avec jour, type, hook, justification
+4. **Valider** — chaque post validé est schedulé dans le calendrier
+
+**Budget :** 3 posts/semaine standard, 4 si sujet de veille exceptionnel.
+
+Si Jonathan demande le plan en dehors du dashboard (dans Claude Code) :
+1. **Consulter** les campagnes actives dans `content/campagnes/`
+2. **Proposer** 3 posts avec pilier, jour, hook — en respectant le ratio des piliers
+3. **Sauvegarder** les drafts dans `content/drafts/`
 
 ### 7.3 Auditer le profil
 
@@ -275,12 +282,24 @@ Quand Jonathan donne un contenu existant à décliner :
 
 ### 7.5 Faire de la veille
 
-Quand Jonathan demande une veille :
+La veille hebdo automatique est intégrée dans la page **"Cette semaine"** du dashboard — bouton "Rechercher" → 5 sujets via Claude web search, ratio identique à l'identité éditoriale de Jonathan.
 
+Si Jonathan demande une veille manuelle sur un sujet précis :
 1. **Utiliser la recherche web** pour trouver les contenus récents sur le sujet
 2. **Synthétiser** les tendances et insights pertinents
 3. **Proposer des angles de contenu** inspirés par la veille
 4. **Mettre à jour** `intelligence/trends.md`
+
+### 7.6 Architecture du dashboard
+
+**Navigation (localhost:3001) :**
+- `/` — **Cette semaine** : hub hebdo (note + veille + plan)
+- `/campagnes` — **Campagnes** : gestion + génération des séries + planification multi-campagnes (StrategyPlanner)
+- `/strategie` — **Stratégie** : lecture seule — identité, piliers, vision IA
+- `/calendrier` — **Calendrier** : vue globale + backlog d'idées
+- `/performances` — **Performances** : saisie manuelle des stats
+
+**Principe :** chaque page répond à une seule question. Stratégie = qui suis-je. Campagnes = quoi construire. Cette semaine = quoi poster. Calendrier = vue globale.
 
 ---
 
