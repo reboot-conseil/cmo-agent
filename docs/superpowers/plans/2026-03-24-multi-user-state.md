@@ -23,7 +23,9 @@
 - Task 8 : Thread userId dans routes restantes + generate libs (11 routes + 4 libs)
 - Task 9 : lib/usage.ts (Vercel KV check/record)
 - Task 10 : Usage tracking dans routes generate (7 routes)
-- Task 11 : Admin panel (/admin page + 3 API routes)
+- Task 11 : Admin panel (/admin page + 3 API routes + AdminPanel component)
+
+## Tâches restantes 🔲
 - Task 12 : Script migration données locales (scripts/migrate-to-blob.ts)
 - Task 13 : Onboarding first-login
 - Task 14 : Run complet + build
@@ -37,5 +39,5 @@
 - Spec : `docs/superpowers/specs/2026-03-24-multi-user-design.md`
 
 ## Reprendre
-Démarrer la prochaine session par Task 11 : Admin panel (/admin page + 3 API routes).
-tsc: 0 erreurs. Auth.js fonctionne (besoin AUTH_SECRET + ADMIN_PASSWORD dans .env.local).
+Démarrer la prochaine session par Task 12 : script de migration données locales → Vercel Blob.
+tsc: 0 erreurs. ADMIN_USER_ID=jonathan dans .env.local pour accéder à /admin.
