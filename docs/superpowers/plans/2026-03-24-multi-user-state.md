@@ -11,10 +11,10 @@
 - Task 3 : lib/parse-ideas.ts → storage + tests (22/22)
 - Task 4 : lib/parse-campaigns.ts → storage + tests (9/9)
 - Task 5 : lib/vision.ts + lib/generation-log.ts + lib/calendar-sync.ts → storage + tests (20/20)
+- Task 5b : lib/generate-vision.ts + lib/generate-strategy.ts → storageGet identity.md + userId propagé
+- Task 6 : Clerk setup (middleware.ts + sign-in/sign-up pages + ClerkProvider dans layout)
 
 ## Tâches restantes 🔲
-- Task 5b : Migrer lib/generate-vision.ts + lib/generate-strategy.ts (lire CLAUDE.md → storageGet identity.md)
-- Task 6 : Clerk setup (middleware.ts + sign-in/sign-up pages + ClerkProvider) — NÉCESSITE clés Clerk dans .env.local
 - Task 7 : Thread userId dans routes ideas + campagnes (4 routes)
 - Task 8 : Thread userId dans routes restantes + generate libs (11 routes + 4 libs)
 - Task 9 : lib/usage.ts (Vercel KV check/record)
@@ -33,4 +33,5 @@
 - Spec : `docs/superpowers/specs/2026-03-24-multi-user-design.md`
 
 ## Reprendre
-Démarrer la prochaine session par Task 5b : lire lib/generate-vision.ts et lib/generate-strategy.ts puis migrer.
+Démarrer la prochaine session par Task 7 : thread userId dans les routes ideas + campagnes (4 routes).
+Clerk fonctionne — les clés doivent être dans .env.local pour tester.
