@@ -1,0 +1,22 @@
+import { auth } from '@/auth'
+import { redirect } from 'next/navigation'
+import { getUsageSummary } from '@/lib/usage'
+import { AdminPanel } from '@/components/AdminPanel'
+
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID ?? 'jonathan'
+
+export default async function AdminPage() {
+  const session = await auth()
+  if (!session?.user?.id || session.user.id !== ADMIN_USER_ID) redirect('/')
+
+  const userId = session.user.id
+  const now = new Date()
+  const months: string[] = []
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    months.push(d.toISOString().slice(0, 7))
+  }
+  const history = await Promise.all(months.map(m => getUsageSummary(userId, m)))
+
+  return <AdminPanel history={history} />
+}
