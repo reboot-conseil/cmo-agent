@@ -12,7 +12,11 @@
 - Task 4 : lib/parse-campaigns.ts → storage + tests (9/9)
 - Task 5 : lib/vision.ts + lib/generation-log.ts + lib/calendar-sync.ts → storage + tests (20/20)
 - Task 5b : lib/generate-vision.ts + lib/generate-strategy.ts → storageGet identity.md + userId propagé
-- Task 6 : Clerk setup (middleware.ts + sign-in/sign-up pages + ClerkProvider dans layout)
+- Task 6 : Auth.js (next-auth v5) — middleware + sign-in + layout (Clerk remplacé)
+- Task 7 : userId dans routes ideas + campagnes (4 routes)
+- Task 8 : userId dans 12 routes restantes + 3 pages serveur
+- Task 9 : lib/usage.ts via Vercel Blob (KV déprécié)
+- Task 10 : checkUsage + recordUsage dans les 7 routes generate (vrais token counts)
 
 ## Tâches restantes 🔲
 - Task 7 : Thread userId dans routes ideas + campagnes (4 routes)
@@ -33,5 +37,5 @@
 - Spec : `docs/superpowers/specs/2026-03-24-multi-user-design.md`
 
 ## Reprendre
-Démarrer la prochaine session par Task 7 : thread userId dans les routes ideas + campagnes (4 routes).
-Clerk fonctionne — les clés doivent être dans .env.local pour tester.
+Démarrer la prochaine session par Task 11 : Admin panel (/admin page + 3 API routes).
+tsc: 0 erreurs. Auth.js fonctionne (besoin AUTH_SECRET + ADMIN_PASSWORD dans .env.local).
