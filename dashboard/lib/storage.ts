@@ -72,7 +72,10 @@ export async function storageGet(userId: string, relativePath: string): Promise<
     const { blobs } = await list({ prefix, limit: 1 })
     const blob = blobs.find(b => b.pathname === prefix)
     if (!blob) return null
-    const res = await fetch(blob.downloadUrl)
+    // Private blobs require Authorization header even with downloadUrl
+    const res = await fetch(blob.url, {
+      headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    })
     if (!res.ok) return null
     return res.text()
   } catch {
