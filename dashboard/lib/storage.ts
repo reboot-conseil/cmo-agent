@@ -1,9 +1,13 @@
 import { put, del, list } from '@vercel/blob'
-import fs from 'fs'
-import path from 'path'
 
 const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN
 const CMO_BASE = process.env.CMO_BASE ?? '/Users/jonathanbraun/cmo-agent'
+
+// fs/path chargés dynamiquement uniquement en dev local (jamais tracés par Next.js en prod)
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const fs = (!USE_BLOB ? require('fs') : {}) as typeof import('fs')
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const path = (!USE_BLOB ? require('path') : {}) as typeof import('path')
 
 // --- Local filesystem fallback (dev sans BLOB_READ_WRITE_TOKEN) ---
 
