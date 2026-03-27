@@ -72,7 +72,7 @@ export async function storageGet(userId: string, relativePath: string): Promise<
     const { blobs } = await list({ prefix, limit: 1 })
     const blob = blobs.find(b => b.pathname === prefix)
     if (!blob) return null
-    const res = await fetch(blob.url)
+    const res = await fetch(blob.downloadUrl)
     if (!res.ok) return null
     return res.text()
   } catch {
@@ -83,7 +83,7 @@ export async function storageGet(userId: string, relativePath: string): Promise<
 export async function storagePut(userId: string, relativePath: string, content: string): Promise<void> {
   if (!USE_BLOB) { localPut(relativePath, content); return }
   await put(blobPath(userId, relativePath), content, {
-    access: 'public',
+    access: 'private',
     contentType: 'text/markdown; charset=utf-8',
     addRandomSuffix: false,
     allowOverwrite: true,

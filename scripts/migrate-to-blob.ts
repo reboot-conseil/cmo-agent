@@ -64,7 +64,7 @@ async function main() {
       try {
         const content = fs.readFileSync(filePath, 'utf-8')
         await put(blobPath, content, {
-          access: 'public',
+          access: 'private',
           contentType: 'text/markdown; charset=utf-8',
           addRandomSuffix: false,
           allowOverwrite: FORCE,
