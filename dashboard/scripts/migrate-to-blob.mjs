@@ -31,7 +31,7 @@ if (!USER_ID) {
 }
 
 // CMO_BASE = racine du monorepo (parent de dashboard/)
-const CMO_BASE = new URL('../../..', import.meta.url).pathname.replace(/\/$/, '')
+const CMO_BASE = new URL('../..', import.meta.url).pathname.replace(/\/$/, '')
 
 function walkDir(dir) {
   if (!existsSync(dir)) return []
