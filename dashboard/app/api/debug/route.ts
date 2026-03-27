@@ -61,19 +61,29 @@ export async function GET() {
         deepDebug.pathnameFromList = exactBlobs[0]?.pathname
         deepDebug.pathnameExpected = fullPathname
 
-        if (blob?.downloadUrl) {
-          // Step 2: try fetching downloadUrl
+        if (blob) {
+          // Step 2a: fetch with Authorization header (the fix)
           try {
-            const res = await fetch(blob.downloadUrl)
-            deepDebug.fetchStatus = res.status
-            deepDebug.fetchOk = res.ok
+            const res = await fetch(blob.url, {
+              headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+            })
+            deepDebug.fetchWithAuthStatus = res.status
+            deepDebug.fetchWithAuthOk = res.ok
             if (res.ok) {
               const text = await res.text()
               deepDebug.contentLength = text.length
               deepDebug.contentPreview = text.slice(0, 200)
             }
           } catch (e) {
-            deepDebug.fetchError = String(e)
+            deepDebug.fetchWithAuthError = String(e)
+          }
+
+          // Step 2b: storageGet end-to-end
+          try {
+            const content = await storageGet(userId, relativePath)
+            deepDebug.storageGetResult = content ? content.slice(0, 100) + '...' : null
+          } catch (e) {
+            deepDebug.storageGetError = String(e)
           }
         }
       }
