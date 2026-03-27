@@ -1,4 +1,4 @@
-import { auth } from '@/auth'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { listIdeas } from '@/lib/parse-ideas'
 import { IdeaProvider } from '@/context/IdeaContext'
@@ -8,9 +8,9 @@ import { CalendarGrid } from '@/components/CalendarGrid'
 import { DetailPanel } from '@/components/DetailPanel'
 
 export default async function CalendrierPage() {
-  const session = await auth()
-  if (!session?.user?.id) redirect('/sign-in')
-  const ideas = await listIdeas(session.user.id)
+  const { userId } = await auth()
+  if (!userId) redirect('/sign-in')
+  const ideas = await listIdeas(userId)
 
   return (
     <IdeaProvider>

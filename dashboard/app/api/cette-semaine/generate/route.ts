@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { auth } from '@clerk/nextjs/server'
 import { checkUsage, recordUsage } from '@/lib/usage'
 import { listCampaigns } from '@/lib/parse-campaigns'
 import { readIdea } from '@/lib/parse-ideas'
@@ -7,9 +7,9 @@ import { generateWeeklyPlan } from '@/lib/generate-weekly-plan'
 import type { WeeklyPlanRequest } from '@/lib/types'
 
 export async function POST(request: Request) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = session.user.id
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
   try {
     const body = await request.json() as Pick<WeeklyPlanRequest, 'noteVocale' | 'veille'>
 

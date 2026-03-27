@@ -1,4 +1,4 @@
-import { auth } from '@/auth'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/Sidebar'
 import { StrategyFoundation } from '@/components/StrategyFoundation'
@@ -60,9 +60,9 @@ function parseCLAUDEMd(content: string): CLAUDEMdSections {
 }
 
 export default async function StrategiePage() {
-  const session = await auth()
-  if (!session?.user?.id) redirect('/sign-in')
-  const userId = session.user.id
+  const { userId } = await auth()
+  if (!userId) redirect('/sign-in')
+  
   const claudeMd = await storageGet(userId, 'identity.md') ?? ''
   const sections = parseCLAUDEMd(claudeMd)
   const visionData = await readVision(userId)

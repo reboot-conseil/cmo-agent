@@ -1,4 +1,4 @@
-import { auth } from '@/auth'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { listCampaigns } from '@/lib/parse-campaigns'
 import { CampaignProvider } from '@/context/CampaignContext'
@@ -9,9 +9,9 @@ import { CampaignGenerator } from '@/components/CampaignGenerator'
 import { StrategyPlanner } from '@/components/StrategyPlanner'
 
 export default async function CampagnesPage() {
-  const session = await auth()
-  if (!session?.user?.id) redirect('/sign-in')
-  const campaigns = await listCampaigns(session.user.id)
+  const { userId } = await auth()
+  if (!userId) redirect('/sign-in')
+  const campaigns = await listCampaigns(userId)
 
   return (
     <CampaignProvider initialCampaigns={campaigns}>

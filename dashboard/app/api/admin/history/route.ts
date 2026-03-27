@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { auth } from '@clerk/nextjs/server'
 import { getUsageSummary } from '@/lib/usage'
 
 function isAdmin(userId: string) {
@@ -8,9 +8,9 @@ function isAdmin(userId: string) {
 
 /** Returns usage for the last 6 months */
 export async function GET() {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  if (!isAdmin(session.user.id)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isAdmin(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   try {
     const now = new Date()
     const months: string[] = []
@@ -19,7 +19,7 @@ export async function GET() {
       months.push(d.toISOString().slice(0, 7))
     }
     const history = await Promise.all(
-      months.map(m => getUsageSummary(session.user!.id!, m))
+      months.map(m => getUsageSummary(userId, m))
     )
     return NextResponse.json(history)
   } catch (e) {

@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { auth } from '@clerk/nextjs/server'
 import { readCampaign, writeCampaign } from '@/lib/parse-campaigns'
 import type { Campaign } from '@/lib/types'
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ slug: string }> }) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = session.user.id
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
   try {
     const { slug } = await params
     const existing = await readCampaign(userId, slug)

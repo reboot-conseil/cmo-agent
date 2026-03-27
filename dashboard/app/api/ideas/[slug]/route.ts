@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { auth } from '@clerk/nextjs/server'
 import { readIdea, writeIdea, deleteIdea, listIdeas } from '@/lib/parse-ideas'
 import { syncCalendarFile } from '@/lib/calendar-sync'
 import type { Idea } from '@/lib/types'
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = session.user.id
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
   try {
     const { slug } = await params
     const existing = await readIdea(userId, slug)
@@ -21,9 +21,9 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ slug: string }> }) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = session.user.id
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
   try {
     const { slug } = await params
     const existing = await readIdea(userId, slug)

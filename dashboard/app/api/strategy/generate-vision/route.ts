@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/auth'
+import { auth } from '@clerk/nextjs/server'
 import { checkUsage, recordUsage } from '@/lib/usage'
 import { generateVision } from '@/lib/generate-vision'
 import { saveVision, readVision } from '@/lib/vision'
 
 export async function POST() {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const userId = session.user.id
+  const { userId } = await auth()
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  
   try {
     const today = new Date().toISOString().slice(0, 10)
     await checkUsage(userId)

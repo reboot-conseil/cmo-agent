@@ -1,4 +1,4 @@
-import { auth } from '@/auth'
+import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { getUsageSummary } from '@/lib/usage'
 import { AdminPanel } from '@/components/AdminPanel'
@@ -6,10 +6,10 @@ import { AdminPanel } from '@/components/AdminPanel'
 const ADMIN_USER_ID = process.env.ADMIN_USER_ID ?? 'jonathan'
 
 export default async function AdminPage() {
-  const session = await auth()
-  if (!session?.user?.id || session.user.id !== ADMIN_USER_ID) redirect('/')
+  const { userId } = await auth()
+  if (!userId || userId !== ADMIN_USER_ID) redirect('/')
 
-  const userId = session.user.id
+  
   const now = new Date()
   const months: string[] = []
   for (let i = 0; i < 6; i++) {
