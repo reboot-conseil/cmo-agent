@@ -92,8 +92,13 @@ export async function GET() {
     }
   }
 
+  const ADMIN_USER_ID = process.env.ADMIN_USER_ID ?? ''
+  const isAdmin = userId === ADMIN_USER_ID
+
   return NextResponse.json({
     userId,
+    isAdmin,
+    adminUserIdSet: !!ADMIN_USER_ID,
     USE_BLOB,
     rawBlobs: { count: rawBlobs.length, error: rawBlobsError },
     ideasList: { count: ideasList.length, error: ideasListError },
