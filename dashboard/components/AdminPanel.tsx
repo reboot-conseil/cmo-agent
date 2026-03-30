@@ -9,7 +9,20 @@ interface UsageSummary {
   limit: number
 }
 
-export function AdminPanel({ history }: { history: UsageSummary[] }) {
+interface UserUsageSummary {
+  userId: string
+  tokensUsed: number
+  requestCount: number
+  limit: number
+}
+
+export function AdminPanel({
+  history,
+  allUsersUsage,
+}: {
+  history: UsageSummary[]
+  allUsersUsage: UserUsageSummary[]
+}) {
   const current = history[0]
   const [limit, setLimit] = useState(String(current?.limit ?? 50000))
   const [saving, setSaving] = useState(false)
@@ -69,7 +82,7 @@ export function AdminPanel({ history }: { history: UsageSummary[] }) {
       </form>
 
       <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Historique (6 mois)</h2>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 40 }}>
         <thead>
           <tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left', color: '#6b7280' }}>
             <th style={{ padding: '8px 12px' }}>Mois</th>
@@ -89,6 +102,34 @@ export function AdminPanel({ history }: { history: UsageSummary[] }) {
           ))}
         </tbody>
       </table>
+
+      <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Utilisateurs — mois courant</h2>
+      {allUsersUsage.length === 0 ? (
+        <p style={{ fontSize: 13, color: '#6b7280' }}>Aucun utilisateur ce mois.</p>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid #e5e7eb', textAlign: 'left', color: '#6b7280' }}>
+              <th style={{ padding: '8px 12px' }}>Utilisateur</th>
+              <th style={{ padding: '8px 12px' }}>Tokens</th>
+              <th style={{ padding: '8px 12px' }}>Requêtes</th>
+              <th style={{ padding: '8px 12px' }}>% limite</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allUsersUsage.map(row => (
+              <tr key={row.userId} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontSize: 12 }}>
+                  {row.userId.slice(0, 14)}…
+                </td>
+                <td style={{ padding: '8px 12px' }}>{row.tokensUsed.toLocaleString('fr')}</td>
+                <td style={{ padding: '8px 12px' }}>{row.requestCount}</td>
+                <td style={{ padding: '8px 12px' }}>{Math.round((row.tokensUsed / row.limit) * 100)}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   )
 }
