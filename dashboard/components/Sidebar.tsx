@@ -10,7 +10,7 @@ const NAV = [
   { href: '/performances', label: 'Performances', icon: '↑' },
 ]
 
-export function Sidebar() {
+export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname()
   return (
     <nav style={{ width: 200, minWidth: 200, background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', padding: '16px 0' }}>
@@ -25,6 +25,17 @@ export function Sidebar() {
           <span>{item.icon}</span>{item.label}
         </Link>
       ))}
+      {isAdmin && (
+        <>
+          <div style={{ margin: '8px 20px', borderTop: '1px solid var(--color-border)' }} />
+          <Link href="/admin"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 20px', fontSize: 13, fontWeight: 500, textDecoration: 'none',
+              background: pathname === '/admin' ? 'var(--color-primary-light)' : 'transparent',
+              color: pathname === '/admin' ? 'var(--color-primary)' : 'var(--color-muted-foreground)' }}>
+            <span>⚙</span>Admin
+          </Link>
+        </>
+      )}
     </nav>
   )
 }
