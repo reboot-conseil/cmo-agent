@@ -7,6 +7,7 @@
  * Acceptable for ≤50 users. If scale grows, swap to Upstash Redis adapter.
  */
 
+import { list } from '@vercel/blob'
 import { storageGet, storagePut } from './storage'
 
 const DEFAULT_MONTHLY_TOKEN_LIMIT = 50_000
@@ -72,4 +73,38 @@ export async function getUsageSummary(userId: string, month = currentMonth()): P
 /** Admin only — set a custom monthly token limit for a user. */
 export async function setUserLimit(userId: string, monthlyTokenLimit: number): Promise<void> {
   await storagePut(userId, 'limits.json', JSON.stringify({ monthlyTokenLimit }))
+}
+
+export interface UserUsageSummary {
+  userId: string
+  tokensUsed: number
+  requestCount: number
+  limit: number
+}
+
+/**
+ * Admin only — list all users' usage for a given month.
+ * Scans Vercel Blob for all {userId}/usage/{month}.json blobs.
+ * Returns results sorted by tokensUsed descending.
+ */
+export async function listAllUsersUsage(month = currentMonth()): Promise<UserUsageSummary[]> {
+  const suffix = `usage/${month}.json`
+  const { blobs } = await list()
+
+  const userIds = blobs
+    .filter(b => b.pathname.endsWith(suffix))
+    .map(b => b.pathname.split('/')[0])
+    .filter((id, i, arr) => arr.indexOf(id) === i) // deduplicate
+
+  const summaries = await Promise.all(
+    userIds.map(async (userId): Promise<UserUsageSummary> => {
+      const [usage, lim] = await Promise.all([
+        readUsage(userId, month),
+        readLimit(userId),
+      ])
+      return { userId, ...usage, limit: lim }
+    })
+  )
+
+  return summaries.sort((a, b) => b.tokensUsed - a.tokensUsed)
 }
