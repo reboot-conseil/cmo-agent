@@ -8,15 +8,18 @@ import { CampaignDetail } from '@/components/CampaignDetail'
 import { CampaignGenerator } from '@/components/CampaignGenerator'
 import { StrategyPlanner } from '@/components/StrategyPlanner'
 
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID ?? ''
+
 export default async function CampagnesPage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
+  const isAdmin = userId === ADMIN_USER_ID
   const campaigns = await listCampaigns(userId)
 
   return (
     <CampaignProvider initialCampaigns={campaigns}>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-        <Sidebar />
+        <Sidebar isAdmin={isAdmin} />
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
           <CampaignList />
           <CampaignDetail />
