@@ -7,6 +7,8 @@ import { readVision } from '@/lib/vision'
 import { storageGet } from '@/lib/storage'
 import type { CLAUDEMdSections } from '@/lib/types'
 
+const ADMIN_USER_ID = process.env.ADMIN_USER_ID ?? ''
+
 function parseCLAUDEMd(content: string): CLAUDEMdSections {
   // ── identite ─────────────────────────────────────────────────────────────
   // Extract from "### Mission éditoriale" to next "## " H2
@@ -62,14 +64,16 @@ function parseCLAUDEMd(content: string): CLAUDEMdSections {
 export default async function StrategiePage() {
   const { userId } = await auth()
   if (!userId) redirect('/sign-in')
-  
+
+  const isAdmin = userId === ADMIN_USER_ID
+
   const claudeMd = await storageGet(userId, 'identity.md') ?? ''
   const sections = parseCLAUDEMd(claudeMd)
   const visionData = await readVision(userId)
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      <Sidebar />
+      <Sidebar isAdmin={isAdmin} />
       <div style={{ flex: 1, overflowY: 'auto', padding: '32px 40px' }}>
         <StrategyFoundation sections={sections} />
         <StrategyMemory initialData={visionData} />
