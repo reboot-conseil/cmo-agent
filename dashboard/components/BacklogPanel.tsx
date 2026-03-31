@@ -54,7 +54,11 @@ export function BacklogPanel() {
   }
 
   return (
-    <div style={{ width: 340, minWidth: 340, background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div
+      onDragOver={e => { if (draggingScheduled) { e.preventDefault(); setIsDragOver(true) } }}
+      onDragLeave={e => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) setIsDragOver(false) }}
+      onDrop={handleDrop}
+      style={{ width: 340, minWidth: 340, background: isDragOver ? 'var(--color-primary-light)' : 'var(--color-surface)', borderRight: `2px solid ${isDragOver ? 'var(--color-primary)' : 'var(--color-border)'}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', transition: 'background 0.15s, border-color 0.15s' }}>
       {/* Header */}
       <div style={{ padding: '16px 16px 10px', borderBottom: '1px solid var(--color-border-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontWeight: 600, fontSize: 14 }}>Idées</span>
@@ -95,26 +99,12 @@ export function BacklogPanel() {
         ))}
       </div>
 
-      {/* Drop zone banner — always in DOM, visible when dragging a scheduled idea */}
-      <div
-        onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
-        onDragLeave={() => setIsDragOver(false)}
-        onDrop={handleDrop}
-        style={{
-          margin: '8px 12px 0',
-          padding: '10px',
-          borderRadius: 'var(--radius-md)',
-          border: `2px dashed ${isDragOver ? 'var(--color-primary)' : 'var(--color-border)'}`,
-          background: isDragOver ? 'var(--color-primary-light)' : 'transparent',
-          textAlign: 'center',
-          fontSize: 12,
-          color: isDragOver ? 'var(--color-primary)' : 'var(--color-muted-foreground)',
-          transition: 'border-color 0.15s, background 0.15s, opacity 0.15s',
-          opacity: draggingScheduled ? 1 : 0,
-          pointerEvents: draggingScheduled ? 'auto' : 'none',
-        }}>
-        Déposer ici pour retirer du calendrier
-      </div>
+      {/* Hint bar — visible when dragging a scheduled idea */}
+      {draggingScheduled && (
+        <div style={{ padding: '6px 16px', background: 'var(--color-primary)', color: 'white', fontSize: 12, fontWeight: 500, textAlign: 'center' }}>
+          Déposez ici pour retirer du calendrier
+        </div>
+      )}
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
