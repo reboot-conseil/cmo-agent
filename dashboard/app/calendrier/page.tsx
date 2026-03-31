@@ -16,12 +16,12 @@ export default async function CalendrierPage() {
   const ideas = await listIdeas(userId)
 
   return (
-    <IdeaProvider>
+    <IdeaProvider initialIdeas={ideas}>
       <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
         <Sidebar isAdmin={isAdmin} />
         <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-          <BacklogPanel ideas={ideas} />
-          <CalendarGrid ideas={ideas} />
+          <BacklogPanel />
+          <CalendarGrid />
           <DetailPanel allIdeas={ideas} />
         </div>
       </div>

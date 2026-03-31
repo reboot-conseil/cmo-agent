@@ -1,6 +1,5 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { useIdea } from '@/context/IdeaContext'
 import type { Idea, Jour } from '@/lib/types'
 
@@ -24,9 +23,8 @@ const STATUT_BADGE: Record<Idea['statut'], { label: string; bg: string; color: s
   published: { label: '📤 Publié',  bg: '#F5F3FF', color: '#7c3aed' },
 }
 
-export function CalendarGrid({ ideas }: { ideas: Idea[] }) {
-  const router = useRouter()
-  const { setSelectedIdea, draggingSlug, setDraggingSlug } = useIdea()
+export function CalendarGrid() {
+  const { ideas, setSelectedIdea, draggingSlug, setDraggingSlug, moveIdea } = useIdea()
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null)
 
   const scheduledIdeas = ideas.filter(i => i.semaine !== null)
@@ -45,12 +43,7 @@ export function CalendarGrid({ ideas }: { ideas: Idea[] }) {
     setDragOverSlot(null)
     const slug = e.dataTransfer.getData('text/plain')
     if (!slug) return
-    await fetch(`/api/ideas/${slug}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ semaine, jour, statut: 'scheduled' }),
-    })
-    router.refresh()
+    await moveIdea(slug, semaine, jour)
   }
 
   const slotKey = (s: number, j: Jour) => `${s}-${j}`

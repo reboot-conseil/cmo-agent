@@ -1,8 +1,8 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useIdea } from '@/context/IdeaContext'
 import { IdeaCard } from './IdeaCard'
-import type { Idea, Format } from '@/lib/types'
+import type { Format } from '@/lib/types'
 
 const FORMATS: Format[] = ['Post', 'Carrousel', 'Article', 'Vidéo', 'Newsletter']
 const SECTIONS: { key: string; label: string; types: Format[] }[] = [
@@ -12,26 +12,45 @@ const SECTIONS: { key: string; label: string; types: Format[] }[] = [
   { key: 'videos', label: 'Vidéos', types: ['Vidéo', 'Newsletter'] },
 ]
 
-export function BacklogPanel({ ideas }: { ideas: Idea[] }) {
-  const router = useRouter()
+export function BacklogPanel() {
+  const { ideas, addIdea, removeIdea, returnToBacklog, draggingSlug } = useIdea()
   const [filter, setFilter] = useState<Format | 'Tous'>('Tous')
   const [adding, setAdding] = useState(false)
   const [newIdea, setNewIdea] = useState({ sujet: '', pilier: 'IA & Transformation', format: 'Post' as Format })
+  const [isDragOver, setIsDragOver] = useState(false)
 
   const unscheduled = ideas.filter(i => i.semaine === null && i.statut !== 'published')
   const filtered = filter === 'Tous' ? unscheduled : unscheduled.filter(i => i.format === filter)
 
+  // Only show drop zone when dragging a scheduled idea
+  const draggingScheduled = draggingSlug != null && ideas.find(i => i.slug === draggingSlug)?.semaine != null
+
   const handleDelete = async (slug: string) => {
+    removeIdea(slug)
     await fetch(`/api/ideas/${slug}`, { method: 'DELETE' })
-    router.refresh()
   }
 
   const handleAdd = async () => {
     if (!newIdea.sujet.trim()) return
-    await fetch('/api/ideas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newIdea) })
+    const resp = await fetch('/api/ideas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newIdea),
+    })
+    if (resp.ok) {
+      const created = await resp.json()
+      addIdea(created)
+    }
     setNewIdea({ sujet: '', pilier: 'IA & Transformation', format: 'Post' })
     setAdding(false)
-    router.refresh()
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    const slug = e.dataTransfer.getData('text/plain')
+    if (!slug) return
+    await returnToBacklog(slug)
   }
 
   return (
@@ -75,6 +94,27 @@ export function BacklogPanel({ ideas }: { ideas: Idea[] }) {
           </button>
         ))}
       </div>
+
+      {/* Drop zone banner — only visible when dragging a scheduled idea */}
+      {draggingScheduled && (
+        <div
+          onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
+          onDragLeave={() => setIsDragOver(false)}
+          onDrop={handleDrop}
+          style={{
+            margin: '8px 12px 0',
+            padding: '10px',
+            borderRadius: 'var(--radius-md)',
+            border: `2px dashed ${isDragOver ? 'var(--color-primary)' : 'var(--color-border)'}`,
+            background: isDragOver ? 'var(--color-primary-light)' : 'transparent',
+            textAlign: 'center',
+            fontSize: 12,
+            color: isDragOver ? 'var(--color-primary)' : 'var(--color-muted-foreground)',
+            transition: 'border-color 0.15s, background 0.15s',
+          }}>
+          Déposer ici pour retirer du calendrier
+        </div>
+      )}
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
