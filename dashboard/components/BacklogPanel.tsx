@@ -95,26 +95,26 @@ export function BacklogPanel() {
         ))}
       </div>
 
-      {/* Drop zone banner — only visible when dragging a scheduled idea */}
-      {draggingScheduled && (
-        <div
-          onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
-          onDragLeave={() => setIsDragOver(false)}
-          onDrop={handleDrop}
-          style={{
-            margin: '8px 12px 0',
-            padding: '10px',
-            borderRadius: 'var(--radius-md)',
-            border: `2px dashed ${isDragOver ? 'var(--color-primary)' : 'var(--color-border)'}`,
-            background: isDragOver ? 'var(--color-primary-light)' : 'transparent',
-            textAlign: 'center',
-            fontSize: 12,
-            color: isDragOver ? 'var(--color-primary)' : 'var(--color-muted-foreground)',
-            transition: 'border-color 0.15s, background 0.15s',
-          }}>
-          Déposer ici pour retirer du calendrier
-        </div>
-      )}
+      {/* Drop zone banner — always in DOM, visible when dragging a scheduled idea */}
+      <div
+        onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={handleDrop}
+        style={{
+          margin: '8px 12px 0',
+          padding: '10px',
+          borderRadius: 'var(--radius-md)',
+          border: `2px dashed ${isDragOver ? 'var(--color-primary)' : 'var(--color-border)'}`,
+          background: isDragOver ? 'var(--color-primary-light)' : 'transparent',
+          textAlign: 'center',
+          fontSize: 12,
+          color: isDragOver ? 'var(--color-primary)' : 'var(--color-muted-foreground)',
+          transition: 'border-color 0.15s, background 0.15s, opacity 0.15s',
+          opacity: draggingScheduled ? 1 : 0,
+          pointerEvents: draggingScheduled ? 'auto' : 'none',
+        }}>
+        Déposer ici pour retirer du calendrier
+      </div>
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
