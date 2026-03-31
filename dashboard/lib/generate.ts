@@ -37,7 +37,8 @@ Réponds UNIQUEMENT avec un JSON valide (pas de markdown autour) avec cette stru
   })
 
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-  const text = (raw.match(/\{[\s\S]*\}/) ?? [raw])[0]
+  const stripped = raw.replace(/^```[a-z]*\n?/m, '').replace(/\n?```\s*$/m, '')
+  const text = (stripped.match(/\{[\s\S]*\}/) ?? [stripped])[0]
   try {
     const _r = JSON.parse(text) as GenerateResponse
     return { ..._r, _tokens: { inputTokens: message.usage.input_tokens, outputTokens: message.usage.output_tokens } }
