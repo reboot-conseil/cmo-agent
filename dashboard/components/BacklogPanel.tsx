@@ -23,9 +23,7 @@ export function BacklogPanel() {
 
   const unscheduled = ideas.filter(i => i.semaine === null && i.statut !== 'published')
   const filtered = filter === 'Tous' ? unscheduled : unscheduled.filter(i => i.format === filter)
-
-  // True when dragging a card that is currently scheduled (in the calendar)
-  const draggingScheduled = draggingSlug != null && ideas.find(i => i.slug === draggingSlug)?.semaine != null
+  const draggingScheduled = draggingSlug != null && (ideas.find(i => i.slug === draggingSlug)?.semaine ?? null) !== null
 
   const handleDelete = async (slug: string) => {
     removeIdea(slug)
@@ -40,33 +38,26 @@ export function BacklogPanel() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newIdea),
     })
-    if (resp.ok) {
-      const created = await resp.json()
-      addIdea(created)
-    }
+    if (resp.ok) addIdea(await resp.json())
     setNewIdea({ sujet: '', pilier: 'IA & Transformation', format: 'Post' })
     setAdding(false)
   }
 
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    const slug = e.dataTransfer.getData('text/plain')
-    if (!slug) return
-    await returnToBacklog(slug)
-    router.refresh()
-  }
-
   return (
     <div
-      // Always accept dragover so the browser allows drops — visual feedback is conditional
-      onDragOver={e => { e.preventDefault(); if (draggingScheduled) setIsDragOver(true) }}
+      onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
       onDragLeave={e => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) setIsDragOver(false) }}
-      onDrop={handleDrop}
+      onDrop={e => {
+        e.preventDefault()
+        setIsDragOver(false)
+        const slug = e.dataTransfer.getData('text/plain') || draggingSlug || ''
+        if (!slug) return
+        returnToBacklog(slug)
+      }}
       style={{
         width: 340, minWidth: 340,
-        background: isDragOver ? 'var(--color-primary-light)' : 'var(--color-surface)',
-        borderRight: `2px solid ${isDragOver ? 'var(--color-primary)' : 'var(--color-border)'}`,
+        background: isDragOver && draggingScheduled ? 'var(--color-primary-light)' : 'var(--color-surface)',
+        borderRight: `2px solid ${isDragOver && draggingScheduled ? 'var(--color-primary)' : 'var(--color-border)'}`,
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
         transition: 'background 0.15s, border-color 0.15s',
       }}>
@@ -80,13 +71,9 @@ export function BacklogPanel() {
         </button>
       </div>
 
-      {/* Drag-to-backlog hint — visible only when dragging a scheduled card */}
-      <div style={{
-        overflow: 'hidden',
-        maxHeight: draggingScheduled ? 40 : 0,
-        transition: 'max-height 0.2s ease',
-      }}>
-        <div style={{ padding: '8px 16px', background: 'var(--color-primary)', color: 'white', fontSize: 12, fontWeight: 500, textAlign: 'center' }}>
+      {/* Hint when dragging a scheduled card */}
+      <div style={{ overflow: 'hidden', maxHeight: draggingScheduled ? 36 : 0, transition: 'max-height 0.2s ease' }}>
+        <div style={{ padding: '8px 16px', background: isDragOver ? 'var(--color-primary)' : 'var(--color-primary-light)', color: isDragOver ? 'white' : 'var(--color-primary)', fontSize: 12, fontWeight: 500, textAlign: 'center', transition: 'background 0.15s, color 0.15s' }}>
           Déposez ici pour retirer du calendrier
         </div>
       </div>

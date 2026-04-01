@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState } from 'react'
 import type { Idea, Jour } from '@/lib/types'
 
 interface IdeaContextValue {
@@ -8,8 +8,8 @@ interface IdeaContextValue {
   setSelectedIdea: (idea: Idea | null) => void
   draggingSlug: string | null
   setDraggingSlug: (slug: string | null) => void
-  moveIdea: (slug: string, semaine: number, jour: Jour) => Promise<void>
-  returnToBacklog: (slug: string) => Promise<void>
+  moveIdea: (slug: string, semaine: number, jour: Jour) => void
+  returnToBacklog: (slug: string) => void
   addIdea: (idea: Idea) => void
   removeIdea: (slug: string) => void
 }
@@ -21,18 +21,13 @@ export function IdeaProvider({ children, initialIdeas }: { children: React.React
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null)
   const [draggingSlug, setDraggingSlug] = useState<string | null>(null)
 
-  // Sync when server data refreshes (after router.refresh())
-  useEffect(() => {
-    setIdeas(initialIdeas)
-  }, [initialIdeas])
-
-  async function moveIdea(slug: string, semaine: number, jour: Jour) {
-    // Optimistic update — find dragged inside updater to avoid stale closure
+  function moveIdea(slug: string, semaine: number, jour: Jour) {
     setIdeas(prev => {
       const dragged = prev.find(i => i.slug === slug)
       if (!dragged) return prev
       return prev.map(i => {
         if (i.slug === slug) return { ...i, semaine, jour, statut: 'scheduled' as const }
+        // If target slot is occupied, swap or send to backlog
         if (i.semaine === semaine && i.jour === jour) {
           const fromCalendar = dragged.semaine != null && dragged.jour != null
           return { ...i, semaine: fromCalendar ? dragged.semaine : null, jour: fromCalendar ? dragged.jour : null }
@@ -40,16 +35,19 @@ export function IdeaProvider({ children, initialIdeas }: { children: React.React
         return i
       })
     })
-    await fetch(`/api/ideas/${slug}`, {
+    // Fire-and-forget API call — optimistic UI is already updated
+    fetch(`/api/ideas/${slug}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ semaine, jour, statut: 'scheduled' }),
     })
   }
 
-  async function returnToBacklog(slug: string) {
-    setIdeas(prev => prev.map(i => i.slug === slug ? { ...i, semaine: null, jour: null, statut: 'raw' as const } : i))
-    await fetch(`/api/ideas/${slug}`, {
+  function returnToBacklog(slug: string) {
+    setIdeas(prev => prev.map(i =>
+      i.slug === slug ? { ...i, semaine: null, jour: null, statut: 'raw' as const } : i
+    ))
+    fetch(`/api/ideas/${slug}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ semaine: null, jour: null, statut: 'raw' }),
