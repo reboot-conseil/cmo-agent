@@ -6,8 +6,6 @@ interface IdeaContextValue {
   ideas: Idea[]
   selectedIdea: Idea | null
   setSelectedIdea: (idea: Idea | null) => void
-  draggingSlug: string | null
-  setDraggingSlug: (slug: string | null) => void
   moveIdea: (slug: string, semaine: number, jour: Jour) => void
   returnToBacklog: (slug: string) => void
   addIdea: (idea: Idea) => void
@@ -19,7 +17,6 @@ const IdeaContext = createContext<IdeaContextValue | null>(null)
 export function IdeaProvider({ children, initialIdeas }: { children: React.ReactNode; initialIdeas: Idea[] }) {
   const [ideas, setIdeas] = useState<Idea[]>(initialIdeas)
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null)
-  const [draggingSlug, setDraggingSlug] = useState<string | null>(null)
 
   function moveIdea(slug: string, semaine: number, jour: Jour) {
     setIdeas(prev => {
@@ -27,7 +24,6 @@ export function IdeaProvider({ children, initialIdeas }: { children: React.React
       if (!dragged) return prev
       return prev.map(i => {
         if (i.slug === slug) return { ...i, semaine, jour, statut: 'scheduled' as const }
-        // If target slot is occupied, swap or send to backlog
         if (i.semaine === semaine && i.jour === jour) {
           const fromCalendar = dragged.semaine != null && dragged.jour != null
           return { ...i, semaine: fromCalendar ? dragged.semaine : null, jour: fromCalendar ? dragged.jour : null }
@@ -35,7 +31,6 @@ export function IdeaProvider({ children, initialIdeas }: { children: React.React
         return i
       })
     })
-    // Fire-and-forget API call — optimistic UI is already updated
     fetch(`/api/ideas/${slug}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -54,16 +49,11 @@ export function IdeaProvider({ children, initialIdeas }: { children: React.React
     })
   }
 
-  function addIdea(idea: Idea) {
-    setIdeas(prev => [...prev, idea])
-  }
-
-  function removeIdea(slug: string) {
-    setIdeas(prev => prev.filter(i => i.slug !== slug))
-  }
+  function addIdea(idea: Idea) { setIdeas(prev => [...prev, idea]) }
+  function removeIdea(slug: string) { setIdeas(prev => prev.filter(i => i.slug !== slug)) }
 
   return (
-    <IdeaContext.Provider value={{ ideas, selectedIdea, setSelectedIdea, draggingSlug, setDraggingSlug, moveIdea, returnToBacklog, addIdea, removeIdea }}>
+    <IdeaContext.Provider value={{ ideas, selectedIdea, setSelectedIdea, moveIdea, returnToBacklog, addIdea, removeIdea }}>
       {children}
     </IdeaContext.Provider>
   )

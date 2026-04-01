@@ -26,17 +26,17 @@ const STATUT_LABEL: Record<Idea['statut'], string> = {
 }
 
 export function IdeaCard({ idea, onDelete }: { idea: Idea; onDelete?: (slug: string) => void }) {
-  const { selectedIdea, setSelectedIdea, setDraggingSlug } = useIdea()
+  const { selectedIdea, setSelectedIdea } = useIdea()
   const [hovered, setHovered] = useState(false)
   const isSelected = selectedIdea?.slug === idea.slug
   const dotColor = PILIER_COLORS[idea.pilier] ?? '#64748B'
   const fmt = FORMAT_STYLES[idea.format] ?? FORMAT_STYLES['Post']
 
   const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', idea.slug)
-    setDraggingSlug(idea.slug)
   }
-  const handleDragEnd = () => setDraggingSlug(null)
+  const handleDragEnd = () => {}
 
   return (
     <div

@@ -15,15 +15,14 @@ const SECTIONS: { key: string; label: string; types: Format[] }[] = [
 
 export function BacklogPanel() {
   const router = useRouter()
-  const { ideas, addIdea, removeIdea, returnToBacklog, draggingSlug } = useIdea()
+  const { ideas, addIdea, removeIdea, returnToBacklog } = useIdea()
   const [filter, setFilter] = useState<Format | 'Tous'>('Tous')
   const [adding, setAdding] = useState(false)
   const [newIdea, setNewIdea] = useState({ sujet: '', pilier: 'IA & Transformation', format: 'Post' as Format })
-  const [isDragOver, setIsDragOver] = useState(false)
+  const [dropZoneOver, setDropZoneOver] = useState(false)
 
   const unscheduled = ideas.filter(i => i.semaine === null && i.statut !== 'published')
   const filtered = filter === 'Tous' ? unscheduled : unscheduled.filter(i => i.format === filter)
-  const draggingScheduled = draggingSlug != null && (ideas.find(i => i.slug === draggingSlug)?.semaine ?? null) !== null
 
   const handleDelete = async (slug: string) => {
     removeIdea(slug)
@@ -44,23 +43,7 @@ export function BacklogPanel() {
   }
 
   return (
-    <div
-      onDragOver={e => { e.preventDefault(); setIsDragOver(true) }}
-      onDragLeave={e => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) setIsDragOver(false) }}
-      onDrop={e => {
-        e.preventDefault()
-        setIsDragOver(false)
-        const slug = e.dataTransfer.getData('text/plain') || draggingSlug || ''
-        if (!slug) return
-        returnToBacklog(slug)
-      }}
-      style={{
-        width: 340, minWidth: 340,
-        background: isDragOver && draggingScheduled ? 'var(--color-primary-light)' : 'var(--color-surface)',
-        borderRight: `2px solid ${isDragOver && draggingScheduled ? 'var(--color-primary)' : 'var(--color-border)'}`,
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        transition: 'background 0.15s, border-color 0.15s',
-      }}>
+    <div style={{ width: 340, minWidth: 340, background: 'var(--color-surface)', borderRight: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* Header */}
       <div style={{ padding: '16px 16px 10px', borderBottom: '1px solid var(--color-border-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -71,11 +54,30 @@ export function BacklogPanel() {
         </button>
       </div>
 
-      {/* Hint when dragging a scheduled card */}
-      <div style={{ overflow: 'hidden', maxHeight: draggingScheduled ? 36 : 0, transition: 'max-height 0.2s ease' }}>
-        <div style={{ padding: '8px 16px', background: isDragOver ? 'var(--color-primary)' : 'var(--color-primary-light)', color: isDragOver ? 'white' : 'var(--color-primary)', fontSize: 12, fontWeight: 500, textAlign: 'center', transition: 'background 0.15s, color 0.15s' }}>
-          Déposez ici pour retirer du calendrier
-        </div>
+      {/* Always-visible drop zone to return a card to backlog */}
+      <div
+        onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDropZoneOver(true) }}
+        onDragLeave={() => setDropZoneOver(false)}
+        onDrop={e => {
+          e.preventDefault()
+          setDropZoneOver(false)
+          const slug = e.dataTransfer.getData('text/plain')
+          if (slug) returnToBacklog(slug)
+        }}
+        style={{
+          margin: '8px 12px',
+          padding: '10px 12px',
+          borderRadius: 'var(--radius-md)',
+          border: `2px dashed ${dropZoneOver ? 'var(--color-primary)' : 'var(--color-border)'}`,
+          background: dropZoneOver ? 'var(--color-primary-light)' : 'transparent',
+          textAlign: 'center',
+          fontSize: 12,
+          color: dropZoneOver ? 'var(--color-primary)' : 'var(--color-muted-foreground)',
+          transition: 'border-color 0.15s, background 0.15s, color 0.15s',
+          cursor: 'default',
+        }}
+      >
+        ↩ Déposer ici pour retirer du calendrier
       </div>
 
       {/* Add form */}

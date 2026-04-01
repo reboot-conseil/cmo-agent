@@ -24,7 +24,7 @@ const STATUT_BADGE: Record<Idea['statut'], { label: string; bg: string; color: s
 }
 
 export function CalendarGrid() {
-  const { ideas, setSelectedIdea, draggingSlug, setDraggingSlug, moveIdea } = useIdea()
+  const { ideas, setSelectedIdea, moveIdea } = useIdea()
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null)
 
   const scheduledIdeas = ideas.filter(i => i.semaine !== null)
@@ -38,21 +38,10 @@ export function CalendarGrid() {
     return scheduledIdeas.find(i => i.semaine === semaine && i.jour === jour) ?? null
   }
 
-  function handleDrop(e: React.DragEvent, semaine: number, jour: Jour) {
-    e.preventDefault()
-    setDragOverSlot(null)
-    // Use dataTransfer as primary source, draggingSlug as fallback
-    const slug = e.dataTransfer.getData('text/plain') || draggingSlug || ''
-    if (!slug) return
-    moveIdea(slug, semaine, jour)
-    setDraggingSlug(null)
-  }
-
   const slotKey = (s: number, j: Jour) => `${s}-${j}`
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Header with KPIs */}
       <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--color-border-muted)', background: 'var(--color-surface)', display: 'flex', alignItems: 'center', gap: 16 }}>
         <span style={{ fontWeight: 600, fontSize: 14 }}>Calendrier</span>
         <div style={{ display: 'flex', gap: 16, marginLeft: 'auto' }}>
@@ -69,9 +58,7 @@ export function CalendarGrid() {
         </div>
       </div>
 
-      {/* Grid */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
-        {/* Day headers */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 8, paddingLeft: 72 }}>
           {JOURS.map(j => (
             <div key={j} style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 600, color: 'var(--color-muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{j}</div>
@@ -93,7 +80,23 @@ export function CalendarGrid() {
               return (
                 <div
                   key={jour}
-                  style={{ flex: 1, minHeight: 80, borderRadius: 'var(--radius-md)', padding: 8,
+                  draggable={!!idea}
+                  onDragStart={idea ? e => {
+                    e.dataTransfer.effectAllowed = 'move'
+                    e.dataTransfer.setData('text/plain', idea.slug)
+                  } : undefined}
+                  onDragEnd={() => setDragOverSlot(null)}
+                  onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverSlot(key) }}
+                  onDragLeave={() => setDragOverSlot(null)}
+                  onDrop={e => {
+                    e.preventDefault()
+                    setDragOverSlot(null)
+                    const slug = e.dataTransfer.getData('text/plain')
+                    if (slug) moveIdea(slug, semaine, jour)
+                  }}
+                  onClick={() => idea && setSelectedIdea(idea)}
+                  style={{
+                    flex: 1, minHeight: 80, borderRadius: 'var(--radius-md)', padding: 8,
                     border: `1.5px ${idea ? 'solid' : 'dashed'} ${isDragOver ? 'var(--color-primary)' : 'var(--color-border)'}`,
                     background: isDragOver ? 'var(--color-primary-light)' : 'var(--color-surface)',
                     cursor: idea ? 'grab' : 'default',
@@ -103,30 +106,23 @@ export function CalendarGrid() {
                     transition: 'border-color 0.15s, background 0.15s',
                     userSelect: 'none',
                   }}
-                  draggable={!!idea}
-                  onDragStart={idea ? e => { e.dataTransfer.setData('text/plain', idea.slug); setDraggingSlug(idea.slug) } : undefined}
-                  onDragEnd={() => { setDraggingSlug(null); setDragOverSlot(null) }}
-                  onDragOver={e => { e.preventDefault(); setDragOverSlot(key) }}
-                  onDragLeave={() => setDragOverSlot(null)}
-                  onDrop={e => handleDrop(e, semaine, jour)}
-                  onClick={() => idea && setSelectedIdea(idea)}
                 >
                   {idea ? (
                     <>
-                      <div style={{ height: 3, width: '100%', background: pilierColor, borderRadius: 2, marginBottom: 6 }} />
-                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)', lineHeight: 1.35, marginBottom: 4 }}>
+                      <div style={{ height: 3, width: '100%', background: pilierColor, borderRadius: 2, marginBottom: 6, pointerEvents: 'none' }} />
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-foreground)', lineHeight: 1.35, marginBottom: 4, pointerEvents: 'none' }}>
                         {idea.sujet.length > 50 ? idea.sujet.slice(0, 50) + '…' : idea.sujet}
                       </div>
                       {badge && (
-                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 500, background: badge.bg, color: badge.color }}>
+                        <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 500, background: badge.bg, color: badge.color, pointerEvents: 'none' }}>
                           {badge.label}
                         </span>
                       )}
                     </>
                   ) : (
                     <>
-                      <span style={{ fontSize: 18, opacity: 0.25, marginBottom: 2 }}>＋</span>
-                      <span style={{ fontSize: 10, opacity: 0.5 }}>Déposer</span>
+                      <span style={{ fontSize: 18, opacity: 0.25, marginBottom: 2, pointerEvents: 'none' }}>＋</span>
+                      <span style={{ fontSize: 10, opacity: 0.5, pointerEvents: 'none' }}>Déposer</span>
                     </>
                   )}
                 </div>
