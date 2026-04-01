@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useIdea } from '@/context/IdeaContext'
 import { IdeaCard } from './IdeaCard'
 import type { Format } from '@/lib/types'
@@ -13,6 +14,7 @@ const SECTIONS: { key: string; label: string; types: Format[] }[] = [
 ]
 
 export function BacklogPanel() {
+  const router = useRouter()
   const { ideas, addIdea, removeIdea, returnToBacklog, draggingSlug } = useIdea()
   const [filter, setFilter] = useState<Format | 'Tous'>('Tous')
   const [adding, setAdding] = useState(false)
@@ -22,12 +24,13 @@ export function BacklogPanel() {
   const unscheduled = ideas.filter(i => i.semaine === null && i.statut !== 'published')
   const filtered = filter === 'Tous' ? unscheduled : unscheduled.filter(i => i.format === filter)
 
-  // Only show drop zone when dragging a scheduled idea
+  // True when dragging a card that is currently scheduled (in the calendar)
   const draggingScheduled = draggingSlug != null && ideas.find(i => i.slug === draggingSlug)?.semaine != null
 
   const handleDelete = async (slug: string) => {
     removeIdea(slug)
     await fetch(`/api/ideas/${slug}`, { method: 'DELETE' })
+    router.refresh()
   }
 
   const handleAdd = async () => {
@@ -51,14 +54,23 @@ export function BacklogPanel() {
     const slug = e.dataTransfer.getData('text/plain')
     if (!slug) return
     await returnToBacklog(slug)
+    router.refresh()
   }
 
   return (
     <div
-      onDragOver={e => { if (draggingScheduled) { e.preventDefault(); setIsDragOver(true) } }}
+      // Always accept dragover so the browser allows drops — visual feedback is conditional
+      onDragOver={e => { e.preventDefault(); if (draggingScheduled) setIsDragOver(true) }}
       onDragLeave={e => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) setIsDragOver(false) }}
       onDrop={handleDrop}
-      style={{ width: 340, minWidth: 340, background: isDragOver ? 'var(--color-primary-light)' : 'var(--color-surface)', borderRight: `2px solid ${isDragOver ? 'var(--color-primary)' : 'var(--color-border)'}`, display: 'flex', flexDirection: 'column', overflow: 'hidden', transition: 'background 0.15s, border-color 0.15s' }}>
+      style={{
+        width: 340, minWidth: 340,
+        background: isDragOver ? 'var(--color-primary-light)' : 'var(--color-surface)',
+        borderRight: `2px solid ${isDragOver ? 'var(--color-primary)' : 'var(--color-border)'}`,
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        transition: 'background 0.15s, border-color 0.15s',
+      }}>
+
       {/* Header */}
       <div style={{ padding: '16px 16px 10px', borderBottom: '1px solid var(--color-border-muted)', display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontWeight: 600, fontSize: 14 }}>Idées</span>
@@ -66,6 +78,17 @@ export function BacklogPanel() {
         <button onClick={() => setAdding(v => !v)} style={{ marginLeft: 'auto', padding: '4px 10px', background: 'var(--color-primary)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
           {adding ? '✕' : '+ Ajouter'}
         </button>
+      </div>
+
+      {/* Drag-to-backlog hint — visible only when dragging a scheduled card */}
+      <div style={{
+        overflow: 'hidden',
+        maxHeight: draggingScheduled ? 40 : 0,
+        transition: 'max-height 0.2s ease',
+      }}>
+        <div style={{ padding: '8px 16px', background: 'var(--color-primary)', color: 'white', fontSize: 12, fontWeight: 500, textAlign: 'center' }}>
+          Déposez ici pour retirer du calendrier
+        </div>
       </div>
 
       {/* Add form */}
@@ -98,13 +121,6 @@ export function BacklogPanel() {
           </button>
         ))}
       </div>
-
-      {/* Hint bar — visible when dragging a scheduled idea */}
-      {draggingScheduled && (
-        <div style={{ padding: '6px 16px', background: 'var(--color-primary)', color: 'white', fontSize: 12, fontWeight: 500, textAlign: 'center' }}>
-          Déposez ici pour retirer du calendrier
-        </div>
-      )}
 
       {/* List */}
       <div style={{ flex: 1, overflowY: 'auto', padding: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>

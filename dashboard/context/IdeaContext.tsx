@@ -1,5 +1,5 @@
 'use client'
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 import type { Idea, Jour } from '@/lib/types'
 
 interface IdeaContextValue {
@@ -21,20 +21,25 @@ export function IdeaProvider({ children, initialIdeas }: { children: React.React
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null)
   const [draggingSlug, setDraggingSlug] = useState<string | null>(null)
 
+  // Sync when server data refreshes (after router.refresh())
+  useEffect(() => {
+    setIdeas(initialIdeas)
+  }, [initialIdeas])
+
   async function moveIdea(slug: string, semaine: number, jour: Jour) {
-    const dragged = ideas.find(i => i.slug === slug)
-    if (!dragged) return
-
-    // Optimistic update — handle swap if slot is occupied
-    setIdeas(prev => prev.map(i => {
-      if (i.slug === slug) return { ...i, semaine, jour, statut: 'scheduled' as const }
-      if (i.semaine === semaine && i.jour === jour) {
-        const fromCalendar = dragged.semaine != null && dragged.jour != null
-        return { ...i, semaine: fromCalendar ? dragged.semaine : null, jour: fromCalendar ? dragged.jour : null }
-      }
-      return i
-    }))
-
+    // Optimistic update — find dragged inside updater to avoid stale closure
+    setIdeas(prev => {
+      const dragged = prev.find(i => i.slug === slug)
+      if (!dragged) return prev
+      return prev.map(i => {
+        if (i.slug === slug) return { ...i, semaine, jour, statut: 'scheduled' as const }
+        if (i.semaine === semaine && i.jour === jour) {
+          const fromCalendar = dragged.semaine != null && dragged.jour != null
+          return { ...i, semaine: fromCalendar ? dragged.semaine : null, jour: fromCalendar ? dragged.jour : null }
+        }
+        return i
+      })
+    })
     await fetch(`/api/ideas/${slug}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },

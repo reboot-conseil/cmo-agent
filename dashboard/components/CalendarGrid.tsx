@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useIdea } from '@/context/IdeaContext'
 import type { Idea, Jour } from '@/lib/types'
 
@@ -24,7 +25,8 @@ const STATUT_BADGE: Record<Idea['statut'], { label: string; bg: string; color: s
 }
 
 export function CalendarGrid() {
-  const { ideas, setSelectedIdea, draggingSlug, setDraggingSlug, moveIdea } = useIdea()
+  const router = useRouter()
+  const { ideas, setSelectedIdea, setDraggingSlug, moveIdea } = useIdea()
   const [dragOverSlot, setDragOverSlot] = useState<string | null>(null)
 
   const scheduledIdeas = ideas.filter(i => i.semaine !== null)
@@ -44,6 +46,7 @@ export function CalendarGrid() {
     const slug = e.dataTransfer.getData('text/plain')
     if (!slug) return
     await moveIdea(slug, semaine, jour)
+    router.refresh() // sync server state after optimistic update
   }
 
   const slotKey = (s: number, j: Jour) => `${s}-${j}`
@@ -93,7 +96,7 @@ export function CalendarGrid() {
               return (
                 <div key={jour} style={{ flex: 1 }}
                   onDragOver={e => { e.preventDefault(); setDragOverSlot(key) }}
-                  onDragLeave={() => setDragOverSlot(null)}
+                  onDragLeave={e => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) setDragOverSlot(null) }}
                   onDrop={e => handleDrop(e, semaine, jour)}>
                   <div
                     draggable={!!idea}
