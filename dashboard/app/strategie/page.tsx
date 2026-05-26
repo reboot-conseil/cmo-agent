@@ -68,6 +68,12 @@ export default async function StrategiePage() {
   const isAdmin = userId === ADMIN_USER_ID
 
   const claudeMd = await storageGet(userId, 'identity.md') ?? ''
+
+  // Nouvel utilisateur sans identité → onboarding
+  if (!claudeMd.trim()) {
+    redirect('/onboarding')
+  }
+
   const sections = parseCLAUDEMd(claudeMd)
   const visionData = await readVision(userId)
 
